@@ -13,7 +13,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, PlusCircle } from 'lucide-react';
 import {
@@ -28,27 +27,26 @@ import { events } from '@/lib/data';
 export default function EventsPage() {
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Events</CardTitle>
-            <CardDescription>
-              Manage your class events and fund collections.
-            </CardDescription>
-          </div>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" /> Create Event
-          </Button>
+      <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex-1">
+          <CardTitle>Events</CardTitle>
+          <CardDescription>
+            Manage your class events and fund collections.
+          </CardDescription>
         </div>
+        <Button>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          <span className="whitespace-nowrap">Create Event</span>
+        </Button>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Event</TableHead>
-              <TableHead>Cost</TableHead>
-              <TableHead>Collected</TableHead>
-              <TableHead>Pending</TableHead>
+              <TableHead className="hidden sm:table-cell">Cost</TableHead>
+              <TableHead className="hidden md:table-cell">Collected</TableHead>
+              <TableHead className="hidden md:table-cell">Pending</TableHead>
               <TableHead>Deadline</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
@@ -58,15 +56,15 @@ export default function EventsPage() {
           <TableBody>
             {events.map((event) => (
               <TableRow key={event.id}>
-                <TableCell className="font-medium">
+                <TableCell>
                   <div className="font-bold">{event.name}</div>
-                  <div className="text-sm text-muted-foreground">{event.description}</div>
+                  <div className="text-sm text-muted-foreground hidden sm:inline">{event.description}</div>
                 </TableCell>
-                <TableCell>₹{event.cost.toLocaleString()}</TableCell>
-                <TableCell className="text-green-600">
+                <TableCell className="hidden sm:table-cell">₹{event.cost.toLocaleString()}</TableCell>
+                <TableCell className="text-green-600 hidden md:table-cell">
                   ₹{event.totalCollected.toLocaleString()}
                 </TableCell>
-                <TableCell className="text-orange-600">
+                <TableCell className="text-orange-600 hidden md:table-cell">
                   ₹{event.totalPending.toLocaleString()}
                 </TableCell>
                 <TableCell>{new Date(event.deadline).toLocaleDateString()}</TableCell>
