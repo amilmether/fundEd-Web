@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -6,7 +7,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Calendar as CalendarIcon } from 'lucide-react';
+import { Download, Calendar as CalendarIcon, MoreHorizontal } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -105,7 +106,46 @@ export default function ReportsPage() {
           <CardDescription>A preview of all recorded transactions.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          {/* Mobile View */}
+          <div className="grid gap-4 md:hidden">
+            {transactions.map(transaction => (
+              <Card key={transaction.id} className="w-full">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg font-code">{transaction.id}</CardTitle>
+                      <CardDescription>{transaction.studentName} ({transaction.studentRoll})</CardDescription>
+                    </div>
+                     <Badge variant={transaction.status === 'Paid' ? 'default' : transaction.status === 'Pending' ? 'secondary' : 'destructive'}
+                       className={cn(
+                         'whitespace-nowrap',
+                         transaction.status === 'Paid' ? 'bg-green-500/20 text-green-700 border-green-500/20' : 
+                         transaction.status === 'Pending' ? 'bg-orange-500/20 text-orange-700 border-orange-500/20' : ''
+                       )}>
+                       {transaction.status}
+                     </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Event</span>
+                    <span>{transaction.eventName}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Amount</span>
+                    <span className="font-semibold">₹{transaction.amount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Date</span>
+                    <span>{new Date(transaction.date).toLocaleDateString()}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Desktop View */}
+          <Table className="hidden md:table">
             <TableHeader>
               <TableRow>
                 <TableHead>Transaction ID</TableHead>

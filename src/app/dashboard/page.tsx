@@ -147,7 +147,25 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
+             {/* Mobile View */}
+            <div className="grid gap-4 md:hidden">
+              {transactions.slice(0, 5).map((transaction) => (
+                <div key={transaction.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                  <div>
+                    <div className="font-medium">{transaction.studentName}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {transaction.eventName}
+                    </div>
+                  </div>
+                  <div className="text-right font-semibold">
+                    ₹{transaction.amount.toLocaleString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Desktop View */}
+            <Table className="hidden md:table">
               <TableHeader>
                 <TableRow>
                   <TableHead>Student</TableHead>
