@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -23,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { events } from '@/lib/data';
+import { Badge } from '@/components/ui/badge';
 
 export default function EventsPage() {
   return (
@@ -34,13 +36,62 @@ export default function EventsPage() {
             Manage your class events and fund collections.
           </CardDescription>
         </div>
-        <Button>
+        <Button className="w-full sm:w-auto">
           <PlusCircle className="mr-2 h-4 w-4" />
           <span className="whitespace-nowrap">Create Event</span>
         </Button>
       </CardHeader>
       <CardContent>
-        <Table>
+        {/* Mobile View */}
+        <div className="grid gap-4 md:hidden">
+          {events.map((event) => (
+            <Card key={event.id} className="w-full">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg">{event.name}</CardTitle>
+                    <CardDescription>{event.description}</CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button aria-haspopup="true" size="icon" variant="ghost">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Toggle menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem>Edit</DropdownMenuItem>
+                      <DropdownMenuItem>View Payments</DropdownMenuItem>
+                      <DropdownMenuItem>Generate Invoice</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                 <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Cost</span>
+                  <span>₹{event.cost.toLocaleString()}</span>
+                </div>
+                 <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Collected</span>
+                  <span className="text-green-600">₹{event.totalCollected.toLocaleString()}</span>
+                </div>
+                 <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Pending</span>
+                  <span className="text-orange-600">₹{event.totalPending.toLocaleString()}</span>
+                </div>
+                 <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Deadline</span>
+                  <span>{new Date(event.deadline).toLocaleDateString()}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        {/* Desktop View */}
+        <Table className="hidden md:table">
           <TableHeader>
             <TableRow>
               <TableHead>Event</TableHead>
