@@ -151,8 +151,8 @@ export default function ReportsPage() {
                 <TableHead>Transaction ID</TableHead>
                 <TableHead>Student</TableHead>
                 <TableHead>Event</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead className="hidden sm:table-cell">Amount</TableHead>
+                <TableHead className="hidden sm:table-cell">Date</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -165,8 +165,8 @@ export default function ReportsPage() {
                      <div className="text-xs text-muted-foreground">{transaction.studentRoll}</div>
                    </TableCell>
                    <TableCell>{transaction.eventName}</TableCell>
-                   <TableCell>₹{transaction.amount.toLocaleString()}</TableCell>
-                   <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                   <TableCell className="hidden sm:table-cell">₹{transaction.amount.toLocaleString()}</TableCell>
+                   <TableCell className="hidden sm:table-cell">{new Date(transaction.date).toLocaleDateString()}</TableCell>
                    <TableCell>
                      <Badge variant={transaction.status === 'Paid' ? 'default' : transaction.status === 'Pending' ? 'secondary' : 'destructive'}
                        className={transaction.status === 'Paid' ? 'bg-green-500/20 text-green-700 border-green-500/20' : transaction.status === 'Pending' ? 'bg-orange-500/20 text-orange-700 border-orange-500/20' : ''}>
