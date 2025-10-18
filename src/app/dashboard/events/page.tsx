@@ -1,3 +1,4 @@
+'use client';
 
 import {
   Card,
@@ -24,7 +25,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { events } from '@/lib/data';
-import { Badge } from '@/components/ui/badge';
 
 export default function EventsPage() {
   return (
@@ -75,11 +75,11 @@ export default function EventsPage() {
                 </div>
                  <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Collected</span>
-                  <span className="text-green-600">₹{event.totalCollected.toLocaleString()}</span>
+                  <span className="text-green-600 dark:text-green-400">₹{event.totalCollected.toLocaleString()}</span>
                 </div>
                  <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Pending</span>
-                  <span className="text-orange-600">₹{event.totalPending.toLocaleString()}</span>
+                  <span className="text-orange-600 dark:text-orange-400">₹{event.totalPending.toLocaleString()}</span>
                 </div>
                  <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Deadline</span>
@@ -112,10 +112,10 @@ export default function EventsPage() {
                   <div className="text-sm text-muted-foreground hidden sm:inline">{event.description}</div>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">₹{event.cost.toLocaleString()}</TableCell>
-                <TableCell className="text-green-600 hidden md:table-cell">
+                <TableCell className="text-green-600 dark:text-green-400 hidden md:table-cell">
                   ₹{event.totalCollected.toLocaleString()}
                 </TableCell>
-                <TableCell className="text-orange-600 hidden md:table-cell">
+                <TableCell className="text-orange-600 dark:text-orange-400 hidden md:table-cell">
                   ₹{event.totalPending.toLocaleString()}
                 </TableCell>
                 <TableCell>{new Date(event.deadline).toLocaleDateString()}</TableCell>

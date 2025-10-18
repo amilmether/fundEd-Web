@@ -1,3 +1,4 @@
+'use client';
 
 import {
   Card,
@@ -7,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download, Calendar as CalendarIcon, MoreHorizontal } from 'lucide-react';
+import { Download, Calendar as CalendarIcon } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -119,8 +120,9 @@ export default function ReportsPage() {
                      <Badge variant={transaction.status === 'Paid' ? 'default' : transaction.status === 'Pending' ? 'secondary' : 'destructive'}
                        className={cn(
                          'whitespace-nowrap',
-                         transaction.status === 'Paid' ? 'bg-green-500/20 text-green-700 border-green-500/20' : 
-                         transaction.status === 'Pending' ? 'bg-orange-500/20 text-orange-700 border-orange-500/20' : ''
+                         transaction.status === 'Paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 
+                         transaction.status === 'Pending' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300' : 
+                         'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
                        )}>
                        {transaction.status}
                      </Badge>
@@ -169,7 +171,12 @@ export default function ReportsPage() {
                    <TableCell className="hidden sm:table-cell">{new Date(transaction.date).toLocaleDateString()}</TableCell>
                    <TableCell>
                      <Badge variant={transaction.status === 'Paid' ? 'default' : transaction.status === 'Pending' ? 'secondary' : 'destructive'}
-                       className={transaction.status === 'Paid' ? 'bg-green-500/20 text-green-700 border-green-500/20' : transaction.status === 'Pending' ? 'bg-orange-500/20 text-orange-700 border-orange-500/20' : ''}>
+                       className={cn(
+                        'whitespace-nowrap border',
+                        transaction.status === 'Paid' ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800' : 
+                        transaction.status === 'Pending' ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-800' : 
+                        'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800'
+                       )}>
                        {transaction.status}
                      </Badge>
                    </TableCell>

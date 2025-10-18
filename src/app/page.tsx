@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Zap, Shield, BarChart, Mail, Users } from 'lucide-react';
 import { Logo } from '@/components/icons';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function Home() {
   const features = [
@@ -46,9 +47,12 @@ export default function Home() {
             <Logo className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold font-headline text-foreground">FundEdHQ</span>
           </Link>
-          <Button asChild>
-            <Link href="/dashboard">Login</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button asChild>
+              <Link href="/dashboard">Login</Link>
+            </Button>
+          </div>
         </nav>
       </header>
 
@@ -67,7 +71,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="features" className="bg-card py-20">
+        <section id="features" className="bg-muted/40 py-20">
           <div className="container mx-auto px-4">
             <div className="text-center">
               <h2 className="font-headline text-3xl font-bold md:text-4xl">Everything You Need in One Place</h2>
@@ -77,11 +81,11 @@ export default function Home() {
             </div>
             <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {features.map((feature) => (
-                <div key={feature.title} className="flex flex-col items-center text-center p-6 rounded-lg">
+                 <Card key={feature.title} className="flex flex-col items-center text-center p-6 bg-card">
                   {feature.icon}
                   <h3 className="mt-4 font-headline text-xl font-semibold">{feature.title}</h3>
                   <p className="mt-2 text-muted-foreground">{feature.description}</p>
-                </div>
+                </Card>
               ))}
             </div>
           </div>
