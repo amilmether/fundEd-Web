@@ -16,12 +16,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Copy, Pencil, Eye } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -39,9 +40,47 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { events } from '@/lib/data';
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function EventsPage() {
   const [open, setOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleCopyLink = (eventId: string) => {
+    const link = `${window.location.origin}/pay/${eventId}`;
+    navigator.clipboard.writeText(link);
+    toast({
+      title: "Link Copied",
+      description: "Payment link has been copied to your clipboard.",
+    });
+  };
+
+  const EventActions = ({ eventId }: { eventId: string }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button aria-haspopup="true" size="icon" variant="ghost">
+          <MoreHorizontal className="h-4 w-4" />
+          <span className="sr-only">Toggle menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem>
+          <Pencil className="mr-2 h-4 w-4" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Eye className="mr-2 h-4 w-4" />
+          View Payments
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleCopyLink(eventId)}>
+          <Copy className="mr-2 h-4 w-4" />
+          Copy Payment Link
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   return (
     <Card>
@@ -114,20 +153,7 @@ export default function EventsPage() {
                     <CardTitle className="text-lg">{event.name}</CardTitle>
                     <CardDescription>{event.description}</CardDescription>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Toggle menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
-                      <DropdownMenuItem>View Payments</DropdownMenuItem>
-                      <DropdownMenuItem>Generate Invoice</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <EventActions eventId={event.id} />
                 </div>
               </CardHeader>
               <CardContent className="grid gap-4">
@@ -182,20 +208,7 @@ export default function EventsPage() {
                 </TableCell>
                 <TableCell>{new Date(event.deadline).toLocaleDateString()}</TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Toggle menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
-                      <DropdownMenuItem>View Payments</DropdownMenuItem>
-                      <DropdownMenuItem>Generate Invoice</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <EventActions eventId={event.id} />
                 </TableCell>
               </TableRow>
             ))}
