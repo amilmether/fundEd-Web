@@ -50,6 +50,7 @@ import { collection, doc, serverTimestamp, Timestamp, query, where } from 'fireb
 import type { Event, Student, Payment } from '@/lib/types';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { sendPaymentConfirmationEmail } from '@/app/actions';
+import { BrandedLoader } from '@/components/ui/branded-loader';
 
 
 export default function PaymentPage() {
@@ -99,11 +100,7 @@ export default function PaymentPage() {
 
 
   if (isEventLoading || areStudentsLoading || arePaymentsLoading) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background">
-        <p>Loading...</p>
-      </div>
-    );
+    return <BrandedLoader />;
   }
 
   if (!event || !classId) {
