@@ -124,7 +124,7 @@ export default function EventsPage() {
       cost,
       deadline: Timestamp.fromDate(new Date(deadline)),
       paymentOptions,
-      qrCodeUrl: selectedQrCode,
+      qrCodeUrl: selectedQrCode || '',
       category,
     };
 
