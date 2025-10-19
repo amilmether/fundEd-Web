@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, writeBatch, doc } from 'firebase/firestore';
+import { collection, writeBatch, doc, query, orderBy } from 'firebase/firestore';
 import type { Student } from '@/lib/types';
 import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -62,8 +62,8 @@ export default function StudentsPage() {
   // TODO: Replace with dynamic classId from user profile
   const classId = 'class-1';
 
-  const studentsCollection = useMemoFirebase(() => firestore ? collection(firestore, `classes/${classId}/students`) : null, [firestore, classId]);
-  const { data: students, isLoading } = useCollection<Student>(studentsCollection);
+  const studentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, `classes/${classId}/students`), orderBy('rollNo')) : null, [firestore, classId]);
+  const { data: students, isLoading } = useCollection<Student>(studentsQuery);
 
   const filteredStudents = students?.filter(student => 
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
