@@ -10,7 +10,7 @@ const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-space
 const sourceCodePro = Source_Code_Pro({ subsets: ['latin'], variable: '--font-source-code-pro' });
 
 export const metadata: Metadata = {
-  title: 'FundEdHQ | Class Fund and Event Management',
+  title: 'FundEd | Class Fund and Event Management',
   description: 'A full-stack Next.js web app for class fund and event management.',
 };
 

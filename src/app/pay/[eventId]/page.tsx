@@ -198,7 +198,7 @@ export default function PaymentPage() {
         <nav className="container mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Logo className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold font-headline text-foreground">FundEdHQ</span>
+            <span className="text-2xl font-bold font-headline text-foreground">FundEd</span>
           </Link>
           <ThemeToggle />
         </nav>

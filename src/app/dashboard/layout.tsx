@@ -88,7 +88,7 @@ function MobileNav() {
         <div className="flex h-16 items-center px-4 border-b">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <Logo className="h-6 w-6" />
-            <span className="font-headline">FundEdHQ</span>
+            <span className="font-headline">FundEd</span>
           </Link>
         </div>
         <nav className="flex-1 overflow-y-auto p-4">
@@ -162,7 +162,7 @@ export default function DashboardLayout({
               <span className={cn(
                 "font-headline text-lg whitespace-nowrap",
                 "group-data-[collapsible=icon]:hidden",
-              )}>FundEdHQ</span>
+              )}>FundEd</span>
             </Link>
           </SidebarHeader>
           <SidebarContent className="p-2">

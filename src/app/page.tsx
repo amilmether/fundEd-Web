@@ -45,7 +45,7 @@ export default function Home() {
         <nav className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <Logo className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold font-headline text-foreground">FundEdHQ</span>
+            <span className="text-2xl font-bold font-headline text-foreground">FundEd</span>
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -62,7 +62,7 @@ export default function Home() {
             Effortless Fund Management for Education
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-            FundEdHQ simplifies class funds and event payments, bringing transparency and efficiency to students, reps, and admins.
+            FundEd simplifies class funds and event payments, bringing transparency and efficiency to students, reps, and admins.
           </p>
           <div className="mt-8">
             <Button size="lg" asChild>
@@ -76,7 +76,7 @@ export default function Home() {
             <div className="text-center">
               <h2 className="font-headline text-3xl font-bold md:text-4xl">Everything You Need in One Place</h2>
               <p className="mt-4 max-w-xl mx-auto text-muted-foreground">
-                From payment collection to financial reporting, FundEdHQ has you covered.
+                From payment collection to financial reporting, FundEd has you covered.
               </p>
             </div>
             <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -94,7 +94,7 @@ export default function Home() {
 
       <footer className="bg-background py-8">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} FundEdHQ. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} FundEd. All rights reserved.</p>
         </div>
       </footer>
     </div>
