@@ -25,17 +25,9 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
+import type { QrCode } from '@/lib/types';
+import { qrCodes as initialQrCodes } from '@/lib/data';
 
-type QrCode = {
-  id: string;
-  name: string;
-  url: string;
-};
-
-const initialQrCodes: QrCode[] = [
-    { id: 'qr1', name: 'GPay Business', url: 'https://picsum.photos/seed/qr1/300/300' },
-    { id: 'qr2', name: 'PhonePe Personal', url: 'https://picsum.photos/seed/qr2/300/300' },
-];
 
 export default function SettingsPage() {
   const [qrCodes, setQrCodes] = useState<QrCode[]>(initialQrCodes);

@@ -28,3 +28,9 @@ export type Student = {
   email: string;
   class: string;
 };
+
+export type QrCode = {
+  id: string;
+  name: string;
+  url: string;
+};

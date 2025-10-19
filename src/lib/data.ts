@@ -1,16 +1,6 @@
-import type { Transaction, Event, Student } from './types';
+import type { Transaction, Event, Student, QrCode } from './types';
 
 export const transactions: Transaction[] = [
-  {
-    id: 'TXN75648',
-    studentName: 'Rohan Sharma',
-    studentRoll: 'B-21',
-    eventName: 'Annual Tech Fest',
-    amount: 500,
-    date: '2023-10-26',
-    status: 'Paid',
-    paymentMethod: 'Razorpay',
-  },
   {
     id: 'TXN94321',
     studentName: 'Priya Singh',
@@ -124,6 +114,11 @@ export const students: Student[] = [
     email: 'vikram.rathod@example.com',
     class: 'TE-C',
   },
+];
+
+export const qrCodes: QrCode[] = [
+    { id: 'qr1', name: 'GPay Business', url: 'https://picsum.photos/seed/qr1/300/300' },
+    { id: 'qr2', name: 'PhonePe Personal', url: 'https://picsum.photos/seed/qr2/300/300' },
 ];
 
 export const chartData = [

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Card,
   CardContent,
@@ -39,17 +40,25 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { events } from '@/lib/data';
+import { events, qrCodes } from '@/lib/data';
 import type { Event } from '@/lib/types';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function EventsPage() {
   const [open, setOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const { toast } = useToast();
   const [paymentOptions, setPaymentOptions] = useState<('Razorpay' | 'QR' | 'Cash')[]>([]);
+  const [selectedQrCode, setSelectedQrCode] = useState<string | undefined>(undefined);
 
   const handleCopyLink = (eventId: string) => {
     const link = `${window.location.origin}/pay/${eventId}`;
@@ -63,12 +72,14 @@ export default function EventsPage() {
   const handleEdit = (event: Event) => {
     setSelectedEvent(event);
     setPaymentOptions(event.paymentOptions);
+    setSelectedQrCode(event.qrCodeUrl);
     setOpen(true);
   };
 
   const handleCreateNew = () => {
     setSelectedEvent(null);
     setPaymentOptions(['Razorpay']);
+    setSelectedQrCode(undefined);
     setOpen(true);
   };
 
@@ -77,6 +88,8 @@ export default function EventsPage() {
       prev.includes(option) ? prev.filter(item => item !== option) : [...prev, option]
     );
   }
+
+  const selectedQrCodeData = qrCodes.find(qr => qr.url === selectedQrCode);
 
   const EventActions = ({ event }: { event: Event }) => (
     <DropdownMenu>
@@ -204,11 +217,23 @@ export default function EventsPage() {
                   <Label htmlFor="qr-code" className="text-right">
                     QR Code
                   </Label>
-                  <div className="col-span-3 flex items-center gap-2">
-                    <Input id="qr-code" type="file" className="flex-1" />
-                    <Button variant="outline" size="icon">
-                      <Upload className="h-4 w-4" />
-                    </Button>
+                  <div className="col-span-3">
+                    <Select onValueChange={setSelectedQrCode} value={selectedQrCode}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a QR code" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {qrCodes.map(qr => (
+                          <SelectItem key={qr.id} value={qr.url}>{qr.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                     {selectedQrCodeData && (
+                      <div className="mt-2 flex items-center gap-2 p-2 rounded-md border bg-muted/50">
+                        <Image src={selectedQrCodeData.url} alt={selectedQrCodeData.name} width={40} height={40} className="rounded-sm" />
+                        <p className="text-sm font-medium">{selectedQrCodeData.name}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
