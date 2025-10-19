@@ -37,15 +37,21 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, writeBatch, doc, query, orderBy } from 'firebase/firestore';
+import { collection, writeBatch, doc, query } from 'firebase/firestore';
 import type { Student } from '@/lib/types';
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Papa from 'papaparse';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
 import { Loader } from '@/components/ui/loader';
+
+// Natural sort function for alphanumeric strings (e.g., "A-1", "A-10", "A-2")
+const naturalSort = (a: string, b: string) => {
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+};
+
 
 export default function StudentsPage() {
   const firestore = useFirestore();
@@ -62,13 +68,22 @@ export default function StudentsPage() {
   // TODO: Replace with dynamic classId from user profile
   const classId = 'class-1';
 
-  const studentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, `classes/${classId}/students`), orderBy('rollNo')) : null, [firestore, classId]);
+  const studentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, `classes/${classId}/students`)) : null, [firestore, classId]);
   const { data: students, isLoading } = useCollection<Student>(studentsQuery);
 
-  const filteredStudents = students?.filter(student => 
-    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.rollNo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStudents = useMemo(() => {
+    if (!students) return [];
+
+    // Filter students based on search term
+    const filtered = students.filter(student => 
+      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.rollNo.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Apply natural sort on roll number
+    return filtered.sort((a, b) => naturalSort(a.rollNo, b.rollNo));
+
+  }, [students, searchTerm]);
 
   const handleSaveStudent = (e: React.FormEvent) => {
     e.preventDefault();
