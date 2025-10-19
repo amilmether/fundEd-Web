@@ -50,6 +50,11 @@ export default function ReportsPage() {
   const transactionsCollection = useMemoFirebase(() => (firestore && user) ? collection(firestore, `classes/${classId}/payments`) : null, [firestore, user, classId]);
   const { data: transactions, isLoading } = useCollection<Transaction>(transactionsCollection);
 
+  const formatDate = (date: Date | Timestamp | string) => {
+    const d = date instanceof Timestamp ? date.toDate() : new Date(date);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  };
+
   const StatusBadge = ({ status }: { status: Transaction['status'] }) => {
     const variant = getStatusBadgeVariant(status);
     return (
@@ -167,7 +172,7 @@ export default function ReportsPage() {
                         </div>
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">Date</span>
-                            <span>{new Date(transaction.paymentDate instanceof Timestamp ? transaction.paymentDate.toDate() : transaction.paymentDate).toLocaleDateString()}</span>
+                            <span>{formatDate(transaction.paymentDate)}</span>
                         </div>
                         </CardContent>
                     </Card>
@@ -196,7 +201,7 @@ export default function ReportsPage() {
                         </TableCell>
                         <TableCell>{transaction.eventName}</TableCell>
                         <TableCell>₹{transaction.amount.toLocaleString()}</TableCell>
-                        <TableCell>{new Date(transaction.paymentDate instanceof Timestamp ? transaction.paymentDate.toDate() : transaction.paymentDate).toLocaleDateString()}</TableCell>
+                        <TableCell>{formatDate(transaction.paymentDate)}</TableCell>
                         <TableCell>
                             <StatusBadge status={transaction.status} />
                         </TableCell>

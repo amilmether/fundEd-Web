@@ -116,6 +116,11 @@ export default function PrintsPage() {
     }
   };
 
+  const formatDate = (date: Date | Timestamp | string) => {
+    const d = date instanceof Timestamp ? date.toDate() : new Date(date);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  };
+
 
   return (
     <div className="grid gap-8">
@@ -221,7 +226,7 @@ export default function PrintsPage() {
                             <p className="text-sm text-muted-foreground">{dist.studentRoll}</p>
                         </div>
                         <div className="text-right text-sm text-muted-foreground">
-                            <p>{new Date(dist.distributedAt instanceof Timestamp ? dist.distributedAt.toDate() : dist.distributedAt).toLocaleDateString()}</p>
+                            <p>{formatDate(dist.distributedAt)}</p>
                             <p>{new Date(dist.distributedAt instanceof Timestamp ? dist.distributedAt.toDate() : dist.distributedAt).toLocaleTimeString()}</p>
                         </div>
                     </CardContent>
@@ -243,7 +248,7 @@ export default function PrintsPage() {
                 <TableRow key={dist.id}>
                   <TableCell className="font-medium">{dist.studentName}</TableCell>
                   <TableCell>{dist.studentRoll}</TableCell>
-                  <TableCell>{new Date(dist.distributedAt instanceof Timestamp ? dist.distributedAt.toDate() : dist.distributedAt).toLocaleDateString()}</TableCell>
+                  <TableCell>{formatDate(dist.distributedAt)}</TableCell>
                   <TableCell>{new Date(dist.distributedAt instanceof Timestamp ? dist.distributedAt.toDate() : dist.distributedAt).toLocaleTimeString()}</TableCell>
                 </TableRow>
               ))}

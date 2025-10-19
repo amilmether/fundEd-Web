@@ -67,6 +67,11 @@ export default function EventPaymentsPage() {
     })
   };
 
+  const formatDate = (date: Date | Timestamp | string) => {
+    const d = date instanceof Timestamp ? date.toDate() : new Date(date);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  };
+
   if (isEventLoading || areTransactionsLoading) {
     return (
         <Card>
@@ -170,7 +175,7 @@ export default function EventPaymentsPage() {
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Date</span>
-                    <span>{new Date(transaction.paymentDate instanceof Timestamp ? transaction.paymentDate.toDate() : transaction.paymentDate).toLocaleDateString()}</span>
+                    <span>{formatDate(transaction.paymentDate)}</span>
                   </div>
                    <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Method</span>
@@ -212,7 +217,7 @@ export default function EventPaymentsPage() {
                   </div>
                 </TableCell>
                 <TableCell>₹{transaction.amount.toLocaleString()}</TableCell>
-                <TableCell>{new Date(transaction.paymentDate instanceof Timestamp ? transaction.paymentDate.toDate() : transaction.paymentDate).toLocaleDateString()}</TableCell>
+                <TableCell>{formatDate(transaction.paymentDate)}</TableCell>
                 <TableCell>{transaction.paymentMethod}</TableCell>
                 <TableCell>
                    <StatusBadge status={transaction.status} />

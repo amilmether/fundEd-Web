@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -91,6 +90,11 @@ export default function EventsPage() {
       .reduce((acc, p) => acc + p.amount, 0);
   }
 
+  const formatDate = (date: Date | Timestamp | string) => {
+    const d = date instanceof Timestamp ? date.toDate() : new Date(date);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  };
+
 
   const handleCopyLink = (eventId: string) => {
     const link = `${window.location.origin}/pay/${eventId}?classId=${classId}`;
@@ -149,9 +153,6 @@ export default function EventsPage() {
       const eventRef = doc(firestore, `classes/${classId}/events`, selectedEvent.id);
       const dataToUpdate = {
         ...eventData,
-        // We preserve the collected/pending amounts as they are not edited here
-        totalCollected: selectedEvent.totalCollected,
-        totalPending: selectedEvent.totalPending
       };
       setDocumentNonBlocking(eventRef, dataToUpdate, { merge: true });
       toast({ title: 'Event Updated' });
@@ -407,7 +408,7 @@ export default function EventsPage() {
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Deadline</span>
-                      <span>{new Date(event.deadline instanceof Timestamp ? event.deadline.toDate() : event.deadline).toLocaleDateString()}</span>
+                      <span>{formatDate(event.deadline)}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -440,7 +441,7 @@ export default function EventsPage() {
                     <TableCell className="text-green-600 dark:text-green-400 hidden md:table-cell">
                       ₹{getCollectedAmountForEvent(event.id).toLocaleString()}
                     </TableCell>
-                    <TableCell>{new Date(event.deadline instanceof Timestamp ? event.deadline.toDate() : event.deadline).toLocaleDateString()}</TableCell>
+                    <TableCell>{formatDate(event.deadline)}</TableCell>
                     <TableCell>
                       <EventActions event={event} />
                     </TableCell>
