@@ -46,6 +46,7 @@ import {
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { sendPrintDistributionEmail } from '@/app/actions';
 
 export default function PrintsPage() {
   const firestore = useFirestore();
@@ -94,22 +95,31 @@ export default function PrintsPage() {
   }, [searchValue, studentsWhoPaid]);
   
   const eventDistributions = distributions;
+  const selectedEvent = printEvents?.find(e => e.id === selectedEventId);
 
-  const handleDistribute = () => {
-    if (selectedStudent && selectedEventId && firestore) {
+  const handleDistribute = async () => {
+    if (selectedStudent && selectedEventId && firestore && selectedEvent) {
         const newDistribution: Omit<PrintDistribution, 'id' | 'distributedAt'> = {
             studentId: selectedStudent.id,
             studentName: selectedStudent.name,
             studentRoll: selectedStudent.rollNo,
             eventId: selectedEventId,
         };
-        addDocumentNonBlocking(collection(firestore, `classes/${classId}/print_distributions`), {
+        
+        await addDocumentNonBlocking(collection(firestore, `classes/${classId}/print_distributions`), {
             ...newDistribution,
             distributedAt: Timestamp.now(),
         });
+        
+        await sendPrintDistributionEmail({
+            studentName: selectedStudent.name,
+            studentEmail: selectedStudent.email,
+            eventName: selectedEvent.name,
+        });
+
         toast({
             title: 'Print Distributed',
-            description: `${selectedStudent.name} has received their prints.`,
+            description: `${selectedStudent.name} has received their prints and has been notified.`,
         });
         setSelectedStudent(null);
         setSearchValue('');

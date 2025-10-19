@@ -1,0 +1,12 @@
+'use server';
+
+import { sendPrintDistributionEmailFlow, SendEmailInput, SendEmailOutput } from '@/ai/flows/send-email';
+
+/**
+ * Server action to trigger the print distribution email flow.
+ * @param input The data required to send the email.
+ * @returns The result of the flow execution.
+ */
+export async function sendPrintDistributionEmail(input: SendEmailInput): Promise<SendEmailOutput> {
+  return await sendPrintDistributionEmailFlow(input);
+}
