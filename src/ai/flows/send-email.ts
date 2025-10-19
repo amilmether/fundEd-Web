@@ -56,6 +56,13 @@ export const sendPrintDistributionEmailFlow = ai.defineFlow(
 
     const { text: emailBody } = await emailPrompt(input);
 
+    if (!emailBody) {
+        return {
+            success: false,
+            message: 'Failed to generate email content.',
+        };
+    }
+
     const subject = `Your print for "${input.eventName}" has been distributed!`;
     
     // Use the new email service to send the email.

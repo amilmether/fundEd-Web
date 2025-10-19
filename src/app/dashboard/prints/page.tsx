@@ -111,16 +111,25 @@ export default function PrintsPage() {
             distributedAt: Timestamp.now(),
         });
         
-        await sendPrintDistributionEmail({
+        const emailResult = await sendPrintDistributionEmail({
             studentName: selectedStudent.name,
             studentEmail: selectedStudent.email,
             eventName: selectedEvent.name,
         });
 
-        toast({
-            title: 'Print Distributed',
-            description: `${selectedStudent.name} has received their prints and has been notified.`,
-        });
+        if (emailResult.success) {
+            toast({
+                title: 'Print Distributed & Email Sent',
+                description: `${selectedStudent.name} has received their prints and an email has been sent.`,
+            });
+        } else {
+             toast({
+                variant: 'destructive',
+                title: 'Print Distributed, but Email Failed',
+                description: `The print for ${selectedStudent.name} was marked as distributed, but the email failed to send.`,
+            });
+        }
+
         setSelectedStudent(null);
         setSearchValue('');
     }
