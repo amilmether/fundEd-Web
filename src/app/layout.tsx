@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description: 'A full-stack Next.js web app for class fund and event management.',
   manifest: '/manifest.json',
   icons: {
-    icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><path fill=%22%2316a34a%22 d=%22M50,2L2,25L50,48L98,25L50,2Z%22/><path fill=%22%2315803d%22 d=%22M2,75L50,98L98,75L50,52L2,75Z%22/><path fill=%22%2314532d%22 d=%22M2,50L50,73L98,50L50,27L2,50Z%22/></svg>',
+    icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22currentColor%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M12 2L2 7l10 5 10-5-10-5z%22 /><path d=%22M2 17l10 5 10-5%22 /><path d=%22M2 12l10 5 10-5%22 /></svg>',
   }
 };
 
