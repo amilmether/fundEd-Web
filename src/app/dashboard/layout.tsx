@@ -54,7 +54,7 @@ function MainNav() {
         <SidebarMenuItem key={item.href}>
           <Link href={item.href}>
             <SidebarMenuButton
-              isActive={pathname === item.href}
+              isActive={pathname.startsWith(item.href) && (item.href === '/dashboard' ? pathname === item.href : true)}
               icon={<item.icon />}
               tooltip={item.label}
             >
@@ -97,6 +97,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   return (
     <SidebarProvider>
       <div className="min-h-screen w-full flex">
@@ -119,8 +120,8 @@ export default function DashboardLayout({
           <SidebarFooter className="p-2">
             <SidebarMenu>
               <SidebarMenuItem>
-                <Link href="#">
-                  <SidebarMenuButton icon={<Settings/>} tooltip="Settings">
+                <Link href="/dashboard/settings">
+                  <SidebarMenuButton icon={<Settings/>} tooltip="Settings" isActive={pathname === '/dashboard/settings'}>
                     Settings
                   </SidebarMenuButton>
                 </Link>
@@ -159,9 +160,11 @@ export default function DashboardLayout({
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
