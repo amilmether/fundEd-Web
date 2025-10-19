@@ -18,7 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, PlusCircle, Copy, Pencil, Eye, Upload, Trash2 } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Copy, Pencil, Eye, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +56,7 @@ import { collection, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Timestamp } from 'firebase/firestore';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Loader } from '@/components/ui/loader';
 
 export default function EventsPage() {
   const firestore = useFirestore();
@@ -238,7 +239,7 @@ export default function EventsPage() {
               <span className="whitespace-nowrap">Create Event</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent>
             <form onSubmit={handleSaveEvent}>
               <DialogHeader>
                 <DialogTitle>{selectedEvent ? 'Edit Event' : 'Create New Event'}</DialogTitle>
@@ -380,7 +381,7 @@ export default function EventsPage() {
         </Dialog>
       </CardHeader>
       <CardContent>
-        {areEventsLoading ? <p className="text-center text-muted-foreground">Loading events...</p> : (
+        {areEventsLoading ? <div className="flex justify-center items-center py-12"><Loader text="Loading events..." /></div> : (
             <>
             {/* Mobile View */}
             <div className="grid gap-4 md:hidden">

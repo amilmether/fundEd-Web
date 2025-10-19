@@ -45,7 +45,7 @@ import { useAuth, useCollection, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
 import { useEffect, useState } from 'react';
-import { Loader } from '@/components/ui/loader';
+import { BrandedLoader } from '@/components/ui/branded-loader';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -156,7 +156,7 @@ export default function DashboardLayout({
   }
 
   if (isUserLoading || !user) {
-    return <div className="flex min-h-screen items-center justify-center"><Loader text="Authenticating..." /></div>
+    return <BrandedLoader />
   }
 
 

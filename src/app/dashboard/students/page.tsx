@@ -45,6 +45,7 @@ import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/no
 import Papa from 'papaparse';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
+import { Loader } from '@/components/ui/loader';
 
 export default function StudentsPage() {
   const firestore = useFirestore();
@@ -215,7 +216,7 @@ export default function StudentsPage() {
                     Add Student
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent>
                 <form onSubmit={handleSaveStudent}>
                     <DialogHeader>
                         <DialogTitle>Add New Student</DialogTitle>
@@ -306,7 +307,7 @@ export default function StudentsPage() {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? <p className="text-center text-muted-foreground">Loading students...</p> : (
+        {isLoading ? <div className="flex justify-center items-center py-12"><Loader text="Loading students..." /></div> : (
             <>
             {/* Mobile View */}
             <div className="grid gap-4 md:hidden">
@@ -399,6 +400,12 @@ export default function StudentsPage() {
                 </TableBody>
                 </Table>
             </div>
+            
+            {filteredStudents?.length === 0 && !isLoading && (
+                <div className="text-center py-12 text-muted-foreground">
+                    No students found.
+                </div>
+            )}
             </>
         )}
       </CardContent>

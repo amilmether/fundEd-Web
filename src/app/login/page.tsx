@@ -21,7 +21,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { useAuth, useUser } from '@/firebase';
 import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader } from '@/components/ui/loader';
+import { BrandedLoader } from '@/components/ui/branded-loader';
 
 
 const loginSchema = z.object({
@@ -53,11 +53,7 @@ export default function LoginPage() {
   };
 
   if (isUserLoading || user) {
-    return (
-        <div className="flex min-h-screen flex-col items-center justify-center">
-            <Loader text="Loading..." />
-        </div>
-    )
+    return <BrandedLoader />;
   }
 
   return (
