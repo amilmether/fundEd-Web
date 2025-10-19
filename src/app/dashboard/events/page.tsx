@@ -59,6 +59,8 @@ export default function EventsPage() {
   const { toast } = useToast();
   const [paymentOptions, setPaymentOptions] = useState<('Razorpay' | 'QR' | 'Cash')[]>([]);
   const [selectedQrCode, setSelectedQrCode] = useState<string | undefined>(undefined);
+  const [category, setCategory] = useState<Event['category']>('Normal');
+
 
   const handleCopyLink = (eventId: string) => {
     const link = `${window.location.origin}/pay/${eventId}`;
@@ -73,6 +75,7 @@ export default function EventsPage() {
     setSelectedEvent(event);
     setPaymentOptions(event.paymentOptions);
     setSelectedQrCode(event.qrCodeUrl);
+    setCategory(event.category);
     setOpen(true);
   };
 
@@ -80,6 +83,7 @@ export default function EventsPage() {
     setSelectedEvent(null);
     setPaymentOptions(['Razorpay']);
     setSelectedQrCode(undefined);
+    setCategory('Normal');
     setOpen(true);
   };
 
@@ -167,6 +171,22 @@ export default function EventsPage() {
                   placeholder="A short description of the event"
                   className="col-span-3"
                 />
+              </div>
+               <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="category" className="text-right">
+                  Category
+                </Label>
+                <div className="col-span-3">
+                    <Select onValueChange={(value) => setCategory(value as Event['category'])} value={category}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="Normal">Normal</SelectItem>
+                          <SelectItem value="Print">Print</SelectItem>
+                      </SelectContent>
+                    </Select>
+                </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="cost" className="text-right">

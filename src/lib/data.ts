@@ -64,6 +64,7 @@ export const events: Event[] = [
     totalPending: 5000,
     paymentOptions: ['Razorpay', 'QR', 'Cash'],
     qrCodeUrl: 'https://picsum.photos/seed/qr1/300/300',
+    category: 'Normal',
   },
   {
     id: 'EVT002',
@@ -74,6 +75,7 @@ export const events: Event[] = [
     totalCollected: 60000,
     totalPending: 12000,
     paymentOptions: ['Razorpay'],
+    category: 'Normal',
   },
   {
     id: 'EVT003',
@@ -85,6 +87,7 @@ export const events: Event[] = [
     totalPending: 12500,
     paymentOptions: ['QR', 'Cash'],
     qrCodeUrl: 'https://picsum.photos/seed/qr2/300/300',
+    category: 'Normal',
   },
   {
     id: 'EVT004',
@@ -95,6 +98,7 @@ export const events: Event[] = [
     totalCollected: 7500,
     totalPending: 0,
     paymentOptions: ['Razorpay'],
+    category: 'Print',
   },
 ];
 

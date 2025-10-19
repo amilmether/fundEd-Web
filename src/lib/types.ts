@@ -19,6 +19,7 @@ export type Event = {
   totalPending: number;
   paymentOptions: ('Razorpay' | 'QR' | 'Cash')[];
   qrCodeUrl?: string;
+  category: 'Normal' | 'Print';
 };
 
 export type Student = {
