@@ -5,8 +5,8 @@ export type Transaction = {
   eventName: string;
   amount: number;
   date: string;
-  status: 'Paid' | 'Pending' | 'Failed';
-  paymentMethod: 'Razorpay' | 'QR Scan' | 'N/A';
+  status: 'Paid' | 'Pending' | 'Failed' | 'Verification Pending';
+  paymentMethod: 'Razorpay' | 'QR Scan' | 'Cash' | 'N/A';
 };
 
 export type Event = {
@@ -17,7 +17,7 @@ export type Event = {
   cost: number;
   totalCollected: number;
   totalPending: number;
-  paymentOptions: ('Razorpay' | 'QR')[];
+  paymentOptions: ('Razorpay' | 'QR' | 'Cash')[];
 };
 
 export type Student = {

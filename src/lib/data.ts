@@ -18,7 +18,7 @@ export const transactions: Transaction[] = [
     eventName: 'Sports Day Kit',
     amount: 250,
     date: '2023-10-25',
-    status: 'Paid',
+    status: 'Verification Pending',
     paymentMethod: 'QR Scan',
   },
   {
@@ -51,6 +51,16 @@ export const transactions: Transaction[] = [
     status: 'Failed',
     paymentMethod: 'Razorpay',
   },
+    {
+    id: 'TXN88765',
+    studentName: 'Anjali Gupta',
+    studentRoll: 'A-02',
+    eventName: 'Annual Tech Fest',
+    amount: 500,
+    date: '2023-10-22',
+    status: 'Verification Pending',
+    paymentMethod: 'Cash',
+  },
 ];
 
 export const events: Event[] = [
@@ -62,7 +72,7 @@ export const events: Event[] = [
     cost: 500,
     totalCollected: 45000,
     totalPending: 5000,
-    paymentOptions: ['Razorpay', 'QR'],
+    paymentOptions: ['Razorpay', 'QR', 'Cash'],
   },
   {
     id: 'EVT002',
@@ -82,7 +92,7 @@ export const events: Event[] = [
     cost: 250,
     totalCollected: 12500,
     totalPending: 12500,
-    paymentOptions: ['QR'],
+    paymentOptions: ['QR', 'Cash'],
   },
 ];
 

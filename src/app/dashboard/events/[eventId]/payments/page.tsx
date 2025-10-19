@@ -22,7 +22,24 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { events, transactions } from '@/lib/data';
 import { cn } from '@/lib/utils';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Check, X } from 'lucide-react';
+import type { Transaction } from '@/lib/types';
+
+const getStatusBadgeVariant = (status: Transaction['status']) => {
+  switch (status) {
+    case 'Paid':
+      return 'paid';
+    case 'Pending':
+      return 'pending';
+    case 'Failed':
+      return 'failed';
+    case 'Verification Pending':
+      return 'verification';
+    default:
+      return 'default';
+  }
+};
+
 
 export default function EventPaymentsPage() {
   const { eventId } = useParams();
@@ -49,6 +66,33 @@ export default function EventPaymentsPage() {
       </Card>
     );
   }
+
+  const StatusBadge = ({ status }: { status: Transaction['status'] }) => {
+    const variant = getStatusBadgeVariant(status);
+    return (
+      <Badge variant={variant as any}>
+        {status}
+      </Badge>
+    );
+  };
+  
+  const PaymentActions = ({ transaction }: { transaction: Transaction }) => {
+    if (transaction.status !== 'Verification Pending') return null;
+
+    return (
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="icon" className="h-8 w-8 border-green-500 text-green-500 hover:bg-green-500 hover:text-white">
+          <Check className="h-4 w-4" />
+          <span className="sr-only">Confirm</span>
+        </Button>
+        <Button variant="outline" size="icon" className="h-8 w-8 border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Reject</span>
+        </Button>
+      </div>
+    );
+  }
+
 
   return (
     <Card>
@@ -79,15 +123,7 @@ export default function EventPaymentsPage() {
                       <CardTitle className="text-lg font-code">{transaction.id}</CardTitle>
                       <CardDescription>{transaction.studentName} ({transaction.studentRoll})</CardDescription>
                     </div>
-                     <Badge variant={transaction.status === 'Paid' ? 'default' : transaction.status === 'Pending' ? 'secondary' : 'destructive'}
-                       className={cn(
-                         'whitespace-nowrap',
-                         transaction.status === 'Paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 
-                         transaction.status === 'Pending' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300' : 
-                         'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
-                       )}>
-                       {transaction.status}
-                     </Badge>
+                     <StatusBadge status={transaction.status} />
                   </div>
                 </CardHeader>
                 <CardContent className="grid gap-4">
@@ -104,6 +140,13 @@ export default function EventPaymentsPage() {
                     <span>{transaction.paymentMethod}</span>
                   </div>
                 </CardContent>
+                {transaction.status === 'Verification Pending' && (
+                  <CardContent>
+                    <div className="flex justify-end gap-2">
+                       <PaymentActions transaction={transaction}/>
+                    </div>
+                  </CardContent>
+                )}
               </Card>
             ))}
         </div>
@@ -118,6 +161,7 @@ export default function EventPaymentsPage() {
               <TableHead>Date</TableHead>
               <TableHead>Method</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -134,15 +178,10 @@ export default function EventPaymentsPage() {
                 <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
                 <TableCell>{transaction.paymentMethod}</TableCell>
                 <TableCell>
-                   <Badge variant={transaction.status === 'Paid' ? 'default' : transaction.status === 'Pending' ? 'secondary' : 'destructive'}
-                       className={cn(
-                        'whitespace-nowrap border',
-                        transaction.status === 'Paid' ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800' : 
-                        transaction.status === 'Pending' ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-800' : 
-                        'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800'
-                       )}>
-                       {transaction.status}
-                     </Badge>
+                   <StatusBadge status={transaction.status} />
+                </TableCell>
+                <TableCell className="text-right">
+                    <PaymentActions transaction={transaction} />
                 </TableCell>
               </TableRow>
             ))}
