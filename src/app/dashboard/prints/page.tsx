@@ -106,7 +106,7 @@ export default function PrintsPage() {
             eventId: selectedEventId,
         };
         
-        await addDocumentNonBlocking(collection(firestore, `classes/${classId}/print_distributions`), {
+        addDocumentNonBlocking(collection(firestore, `classes/${classId}/print_distributions`), {
             ...newDistribution,
             distributedAt: Timestamp.now(),
         });
@@ -126,7 +126,7 @@ export default function PrintsPage() {
              toast({
                 variant: 'destructive',
                 title: 'Print Distributed, but Email Failed',
-                description: `The print for ${selectedStudent.name} was marked as distributed, but the email failed to send.`,
+                description: `The print for ${selectedStudent.name} was marked as distributed, but the email failed to send. Reason: ${emailResult.message}`,
             });
         }
 
