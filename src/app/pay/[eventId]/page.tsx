@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -100,11 +101,7 @@ export default function PaymentPage() {
   }, [searchValue, availableStudents]);
 
 
-  if (isEventLoading || areStudentsLoading || arePaymentsLoading) {
-    return <BrandedLoader />;
-  }
-
-  if (!event || !classId) {
+  if (isEventLoading || areStudentsLoading || arePaymentsLoading || !event || !classId) {
     return <BrandedLoader />;
   }
 
@@ -139,6 +136,7 @@ export default function PaymentPage() {
       studentName: selectedStudent.name,
       studentRoll: selectedStudent.rollNo,
       paymentMethod: paymentMethod,
+      screenshotUrl: ''
     };
     
     const newPayment = { ...paymentData, paymentDate: serverTimestamp() };
