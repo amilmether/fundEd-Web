@@ -24,6 +24,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { QrCode } from '@/lib/types';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
@@ -46,6 +47,9 @@ export default function SettingsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [newQrName, setNewQrName] = useState('');
   const [newQrFile, setNewQrFile] = useState<File | null>(null);
+  const [newQrUrl, setNewQrUrl] = useState('');
+  const [activeTab, setActiveTab] = useState('upload');
+
 
   const handleDelete = (id: string) => {
     if (!firestore) return;
@@ -60,27 +64,40 @@ export default function SettingsPage() {
   };
 
   const handleAddQrCode = async () => {
-    if (!newQrName || !newQrFile || !storage || !firestore) {
+    if (!newQrName || (activeTab === 'upload' && !newQrFile) || (activeTab === 'url' && !newQrUrl)) {
         toast({
             variant: "destructive",
             title: "Missing Information",
-            description: "Please provide a name and select a file."
+            description: "Please provide a name and select a file or enter a URL."
         });
         return;
     }
     setIsUploading(true);
 
     try {
-        const storageRef = ref(storage, `qr_codes/${Date.now()}_${newQrFile.name}`);
-        const snapshot = await uploadBytes(storageRef, newQrFile);
-        const downloadURL = await getDownloadURL(snapshot.ref);
+        let downloadURL = '';
+
+        if (activeTab === 'upload' && newQrFile && storage) {
+            const storageRef = ref(storage, `qr_codes/${Date.now()}_${newQrFile.name}`);
+            const snapshot = await uploadBytes(storageRef, newQrFile);
+            downloadURL = await getDownloadURL(snapshot.ref);
+        } else if (activeTab === 'url') {
+            downloadURL = newQrUrl;
+        }
+
+        if (!downloadURL) {
+            throw new Error("Could not get a valid URL for the QR code.");
+        }
 
         const qrCodeData: Omit<QrCode, 'id'> = {
             name: newQrName,
             url: downloadURL,
         };
 
-        await addDocumentNonBlocking(collection(firestore, `classes/${classId}/qrcodes`), qrCodeData);
+        if(firestore) {
+            await addDocumentNonBlocking(collection(firestore, `classes/${classId}/qrcodes`), qrCodeData);
+        }
+
 
         toast({
             title: "QR Code Added",
@@ -89,14 +106,15 @@ export default function SettingsPage() {
 
         setNewQrName('');
         setNewQrFile(null);
+        setNewQrUrl('');
         setOpen(false);
 
     } catch (error) {
-        console.error("Error uploading QR code:", error);
+        console.error("Error handling QR code:", error);
         toast({
             variant: "destructive",
-            title: "Upload Failed",
-            description: "There was an error uploading your QR code."
+            title: "Operation Failed",
+            description: "There was an error saving your QR code."
         });
     } finally {
         setIsUploading(false);
@@ -133,19 +151,33 @@ export default function SettingsPage() {
               <DialogHeader>
                 <DialogTitle>Add a New QR Code</DialogTitle>
                 <DialogDescription>
-                  Upload a new QR code image and give it a name.
+                  Upload an image file or provide a public URL for your QR code.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="qr-name">QR Code Name</Label>
-                  <Input id="qr-name" placeholder="e.g., GPay Business" value={newQrName} onChange={(e) => setNewQrName(e.target.value)} />
+                <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="qr-name">QR Code Name</Label>
+                        <Input id="qr-name" placeholder="e.g., GPay Business" value={newQrName} onChange={(e) => setNewQrName(e.target.value)} />
+                    </div>
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="upload">Upload</TabsTrigger>
+                            <TabsTrigger value="url">URL</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="upload">
+                             <div className="grid gap-2 pt-2">
+                                <Label htmlFor="qr-code-file">QR Code Image</Label>
+                                <Input id="qr-code-file" type="file" accept="image/*" onChange={handleFileChange} />
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="url">
+                            <div className="grid gap-2 pt-2">
+                                <Label htmlFor="qr-code-url">Image URL</Label>
+                                <Input id="qr-code-url" type="url" placeholder="https://example.com/qr.png" value={newQrUrl} onChange={(e) => setNewQrUrl(e.target.value)} />
+                            </div>
+                        </TabsContent>
+                    </Tabs>
                 </div>
-                <div className="grid gap-2">
-                   <Label htmlFor="qr-code">QR Code Image</Label>
-                   <Input id="qr-code" type="file" accept="image/*" onChange={handleFileChange} />
-                </div>
-              </div>
               <DialogFooter>
                 <DialogClose asChild>
                   <Button variant="outline" disabled={isUploading}>Cancel</Button>
@@ -169,7 +201,7 @@ export default function SettingsPage() {
                       alt={qr.name}
                       width={150}
                       height={150}
-                      className="rounded-lg border"
+                      className="rounded-lg border aspect-square object-contain"
                     />
                     <p className="font-medium text-center">{qr.name}</p>
                 </CardContent>
