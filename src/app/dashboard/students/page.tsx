@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, writeBatch } from 'firebase/firestore';
+import { collection, writeBatch, doc } from 'firebase/firestore';
 import type { Student } from '@/lib/types';
 import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -367,3 +367,5 @@ export default function StudentsPage() {
     </Card>
   );
 }
+
+    
