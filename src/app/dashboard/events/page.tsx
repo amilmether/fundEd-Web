@@ -239,7 +239,7 @@ export default function EventsPage() {
               <span className="whitespace-nowrap">Create Event</span>
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSaveEvent}>
               <DialogHeader>
                 <DialogTitle>{selectedEvent ? 'Edit Event' : 'Create New Event'}</DialogTitle>

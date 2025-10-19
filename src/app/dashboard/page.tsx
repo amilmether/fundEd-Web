@@ -39,13 +39,13 @@ export default function DashboardPage() {
   // TODO: Replace with dynamic classId from user profile
   const classId = 'class-1';
 
-  const transactionsCollection = useMemoFirebase(() => (firestore && user) ? collection(firestore, `classes/${classId}/payments`) : null, [firestore, user, classId]);
+  const transactionsCollection = useMemoFirebase(() => (firestore && classId) ? collection(firestore, `classes/${classId}/payments`) : null, [firestore, classId]);
   const { data: transactions } = useCollection<Transaction>(transactionsCollection);
 
-  const eventsCollection = useMemoFirebase(() => (firestore && user) ? collection(firestore, `classes/${classId}/events`) : null, [firestore, user, classId]);
+  const eventsCollection = useMemoFirebase(() => (firestore && classId) ? collection(firestore, `classes/${classId}/events`) : null, [firestore, classId]);
   const { data: events } = useCollection<Event>(eventsCollection);
 
-  const recentTransactionsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, `classes/${classId}/payments`), orderBy('paymentDate', 'desc'), limit(5)) : null, [firestore, user, classId]);
+  const recentTransactionsQuery = useMemoFirebase(() => (firestore && classId) ? query(collection(firestore, `classes/${classId}/payments`), orderBy('paymentDate', 'desc'), limit(5)) : null, [firestore, classId]);
   const { data: recentTransactions } = useCollection<Transaction>(recentTransactionsQuery);
 
 

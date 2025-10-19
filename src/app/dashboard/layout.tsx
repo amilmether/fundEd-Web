@@ -138,8 +138,8 @@ export default function DashboardLayout({
   const classId = 'class-1';
 
   const pendingTransactionsQuery = useMemoFirebase(() =>
-    (firestore && user) ? query(collection(firestore, `classes/${classId}/payments`), where('status', '==', 'Verification Pending')) : null,
-  [firestore, user, classId]);
+    (firestore && classId) ? query(collection(firestore, `classes/${classId}/payments`), where('status', '==', 'Verification Pending')) : null,
+  [firestore, classId]);
 
   const { data: pendingTransactions } = useCollection<Transaction>(pendingTransactionsQuery);
 

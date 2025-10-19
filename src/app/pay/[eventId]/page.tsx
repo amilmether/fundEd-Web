@@ -68,13 +68,13 @@ export default function PaymentPage() {
 
   const { toast } = useToast();
 
-  const eventRef = useMemoFirebase(() => firestore && eventId && classId ? doc(firestore, `classes/${classId}/events`, eventId as string) : null, [firestore, eventId, classId]);
+  const eventRef = useMemoFirebase(() => firestore && classId && eventId ? doc(firestore, `classes/${classId}/events`, eventId as string) : null, [firestore, classId, eventId]);
   const { data: event, isLoading: isEventLoading } = useDoc<Event>(eventRef);
 
   const studentsRef = useMemoFirebase(() => firestore && classId ? collection(firestore, `classes/${classId}/students`) : null, [firestore, classId]);
   const { data: allStudents, isLoading: areStudentsLoading } = useCollection<Student>(studentsRef);
 
-  const paymentsQuery = useMemoFirebase(() => firestore && eventId && classId ? query(collection(firestore, `classes/${classId}/payments`), where('eventId', '==', eventId)) : null, [firestore, eventId, classId]);
+  const paymentsQuery = useMemoFirebase(() => firestore && classId && eventId ? query(collection(firestore, `classes/${classId}/payments`), where('eventId', '==', eventId)) : null, [firestore, classId, eventId]);
   const { data: payments, isLoading: arePaymentsLoading } = useCollection<Payment>(paymentsQuery);
 
   const paidStudentIds = useMemo(() => {

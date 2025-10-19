@@ -71,7 +71,7 @@ export default function PrintsPage() {
   const studentsWhoPaidQuery = useMemoFirebase(() => {
     if (!selectedEventId || !firestore) return null;
     return query(collection(firestore, `classes/${classId}/payments`), where('eventId', '==', selectedEventId), where('status', '==', 'Paid'));
-  }, [firestore, selectedEventId, classId]);
+  }, [firestore, selectedEventId]);
 
   const { data: paidPayments } = useCollection<Payment>(studentsWhoPaidQuery);
 
