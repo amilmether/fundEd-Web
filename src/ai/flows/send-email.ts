@@ -8,22 +8,8 @@
 
 import { ai } from '@/ai/genkit';
 import { sendEmail } from '@/lib/email';
-import { z } from 'zod';
+import { SendEmailInputSchema, SendEmailOutputSchema, type SendEmailInput, type SendEmailOutput } from '@/lib/types';
 
-export const SendEmailInputSchema = z.object({
-  studentName: z.string().describe('The name of the student.'),
-  studentEmail: z.string().email().describe('The email address of the student.'),
-  eventName: z.string().describe('The name of the event for which the print was distributed.'),
-});
-
-export type SendEmailInput = z.infer<typeof SendEmailInputSchema>;
-
-export const SendEmailOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-});
-
-export type SendEmailOutput = z.infer<typeof SendEmailOutputSchema>;
 
 /**
  * Server action to trigger the print distribution email flow.
