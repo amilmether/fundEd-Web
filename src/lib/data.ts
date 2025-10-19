@@ -22,16 +22,6 @@ export const transactions: Transaction[] = [
     paymentMethod: 'QR Scan',
   },
   {
-    id: 'TXN12389',
-    studentName: 'Amit Kumar',
-    studentRoll: 'A-15',
-    eventName: 'Annual Tech Fest',
-    amount: 500,
-    date: '2023-10-25',
-    status: 'Pending',
-    paymentMethod: 'N/A',
-  },
-  {
     id: 'TXN55467',
     studentName: 'Sneha Patel',
     studentRoll: 'B-32',

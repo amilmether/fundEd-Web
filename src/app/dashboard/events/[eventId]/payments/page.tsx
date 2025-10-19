@@ -20,10 +20,12 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { events, transactions } from '@/lib/data';
+import { events, transactions as initialTransactions } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Check, X } from 'lucide-react';
 import type { Transaction } from '@/lib/types';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 const getStatusBadgeVariant = (status: Transaction['status']) => {
   switch (status) {
@@ -44,9 +46,24 @@ const getStatusBadgeVariant = (status: Transaction['status']) => {
 export default function EventPaymentsPage() {
   const { eventId } = useParams();
   const event = events.find((e) => e.id === eventId);
+  const [transactions, setTransactions] = useState(initialTransactions);
+  const { toast } = useToast();
+
   const eventTransactions = transactions.filter(
     (t) => t.eventName === event?.name
   );
+  
+  const handlePaymentAction = (transactionId: string, newStatus: 'Paid' | 'Failed') => {
+    setTransactions(prevTransactions =>
+      prevTransactions.map(t =>
+        t.id === transactionId ? { ...t, status: newStatus } : t
+      )
+    );
+    toast({
+        title: "Payment Status Updated",
+        description: `Transaction ${transactionId} has been marked as ${newStatus}.`
+    })
+  };
 
   if (!event) {
     return (
@@ -81,11 +98,19 @@ export default function EventPaymentsPage() {
 
     return (
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="icon" className="h-8 w-8 border-green-500 text-green-500 hover:bg-green-500 hover:text-white">
+        <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8 border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
+            onClick={() => handlePaymentAction(transaction.id, 'Paid')}>
           <Check className="h-4 w-4" />
           <span className="sr-only">Confirm</span>
         </Button>
-        <Button variant="outline" size="icon" className="h-8 w-8 border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
+        <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+            onClick={() => handlePaymentAction(transaction.id, 'Failed')}>
           <X className="h-4 w-4" />
           <span className="sr-only">Reject</span>
         </Button>
