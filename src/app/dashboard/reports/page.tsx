@@ -45,7 +45,9 @@ const getStatusBadgeVariant = (status: Transaction['status']) => {
 export default function ReportsPage() {
   const firestore = useFirestore();
   const { user } = useUser();
-  const transactionsCollection = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'payments') : null, [firestore, user]);
+  // TODO: Replace with dynamic classId from user profile
+  const classId = 'class-1';
+  const transactionsCollection = useMemoFirebase(() => (firestore && user) ? collection(firestore, `classes/${classId}/payments`) : null, [firestore, user, classId]);
   const { data: transactions, isLoading } = useCollection<Transaction>(transactionsCollection);
 
   const StatusBadge = ({ status }: { status: Transaction['status'] }) => {

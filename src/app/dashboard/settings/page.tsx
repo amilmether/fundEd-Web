@@ -36,8 +36,10 @@ export default function SettingsPage() {
   const firestore = useFirestore();
   const storage = firestore ? getStorage(firestore.app) : null;
   const { toast } = useToast();
+  // TODO: Replace with dynamic classId from user profile
+  const classId = 'class-1';
 
-  const qrCodesCollection = useMemoFirebase(() => firestore ? collection(firestore, 'qrcodes') : null, [firestore]);
+  const qrCodesCollection = useMemoFirebase(() => firestore ? collection(firestore, `classes/${classId}/qrcodes`) : null, [firestore, classId]);
   const { data: qrCodes, isLoading } = useCollection<QrCode>(qrCodesCollection);
 
   const [open, setOpen] = useState(false);
@@ -47,7 +49,7 @@ export default function SettingsPage() {
 
   const handleDelete = (id: string) => {
     if (!firestore) return;
-    deleteDocumentNonBlocking(doc(firestore, 'qrcodes', id));
+    deleteDocumentNonBlocking(doc(firestore, `classes/${classId}/qrcodes`, id));
     toast({ title: 'QR Code Deleted' });
   };
   
@@ -78,7 +80,7 @@ export default function SettingsPage() {
             url: downloadURL,
         };
 
-        await addDocumentNonBlocking(collection(firestore, 'qrcodes'), qrCodeData);
+        await addDocumentNonBlocking(collection(firestore, `classes/${classId}/qrcodes`), qrCodeData);
 
         toast({
             title: "QR Code Added",

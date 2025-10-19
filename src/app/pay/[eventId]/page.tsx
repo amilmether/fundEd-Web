@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Upload, Check, ChevronsUpDown, QrCode, Mail } from 'lucide-react';
+import { Upload, Check, ChevronsUpDown, QrCode } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -53,8 +53,9 @@ import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function PaymentPage() {
   const { eventId } = useParams();
+  const searchParams = useSearchParams();
+  const classId = searchParams.get('classId');
   const firestore = useFirestore();
-  const router = useRouter();
 
   const [selectedMethod, setSelectedMethod] = useState('');
   const [open, setOpen] = useState(false);
@@ -66,10 +67,10 @@ export default function PaymentPage() {
 
   const { toast } = useToast();
 
-  const eventRef = useMemoFirebase(() => firestore && eventId ? doc(firestore, 'events', eventId as string) : null, [firestore, eventId]);
+  const eventRef = useMemoFirebase(() => firestore && eventId && classId ? doc(firestore, `classes/${classId}/events`, eventId as string) : null, [firestore, eventId, classId]);
   const { data: event, isLoading: isEventLoading } = useDoc<Event>(eventRef);
 
-  const studentsRef = useMemoFirebase(() => firestore ? collection(firestore, 'students') : null, [firestore]);
+  const studentsRef = useMemoFirebase(() => firestore && classId ? collection(firestore, `classes/${classId}/students`) : null, [firestore, classId]);
   const { data: students, isLoading: areStudentsLoading } = useCollection<Student>(studentsRef);
 
   const filteredStudents = useMemo(() => {
@@ -91,7 +92,7 @@ export default function PaymentPage() {
     );
   }
 
-  if (!event) {
+  if (!event || !classId) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background">
         <Card className="w-full max-w-md">
@@ -99,7 +100,7 @@ export default function PaymentPage() {
             <CardTitle>Event Not Found</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>The event you are looking for does not exist.</p>
+            <p>The event you are looking for does not exist or the class is not specified.</p>
           </CardContent>
         </Card>
       </div>
@@ -134,45 +135,47 @@ export default function PaymentPage() {
     } else if (selectedMethod === 'razorpay') {
       // In a real app, this would redirect to Razorpay
       toast({ title: "Redirecting to Razorpay..."});
+      if (!selectedStudent || !classId) return;
       
       const paymentData: Omit<Payment, 'id' | 'paymentDate'> = {
-        studentId: selectedStudent!.id,
+        studentId: selectedStudent.id,
         eventId: event.id,
         amount: event.cost,
         transactionId: `RAZORPAY_${Date.now()}`,
-        paymentStatus: 'Paid',
+        status: 'Paid',
         eventName: event.name,
-        studentName: selectedStudent!.name,
-        studentRoll: selectedStudent!.rollNo,
+        studentName: selectedStudent.name,
+        studentRoll: selectedStudent.rollNo,
         paymentMethod: 'Razorpay'
       };
       
       const newPayment = { ...paymentData, paymentDate: serverTimestamp() };
-      addDocumentNonBlocking(collection(firestore, 'payments'), newPayment);
+      addDocumentNonBlocking(collection(firestore, `classes/${classId}/payments`), newPayment);
 
       setShowSuccessDialog(true);
     } else if (selectedMethod === 'cash') {
+      if (!selectedStudent || !classId) return;
        const paymentData: Omit<Payment, 'id' | 'paymentDate'> = {
-        studentId: selectedStudent!.id,
+        studentId: selectedStudent.id,
         eventId: event.id,
         amount: event.cost,
         transactionId: `CASH_${Date.now()}`,
-        paymentStatus: 'Verification Pending',
+        status: 'Verification Pending',
         eventName: event.name,
-        studentName: selectedStudent!.name,
-        studentRoll: selectedStudent!.rollNo,
+        studentName: selectedStudent.name,
+        studentRoll: selectedStudent.rollNo,
         paymentMethod: 'Cash'
       };
       
       const newPayment = { ...paymentData, paymentDate: serverTimestamp() };
-      addDocumentNonBlocking(collection(firestore, 'payments'), newPayment);
+      addDocumentNonBlocking(collection(firestore, `classes/${classId}/payments`), newPayment);
 
        setShowSuccessDialog(true);
     }
   };
 
   const handleSubmit = async () => {
-    if (!selectedStudent || !firestore) return;
+    if (!selectedStudent || !firestore || !classId) return;
     // In a real app, upload screenshotFile to Firebase Storage
     
     const paymentData: Omit<Payment, 'id' | 'paymentDate'> = {
@@ -180,7 +183,7 @@ export default function PaymentPage() {
       eventId: event.id,
       amount: event.cost,
       transactionId: `QR_${Date.now()}`,
-      paymentStatus: 'Verification Pending',
+      status: 'Verification Pending',
       screenshotUrl: screenshotFile ? 'placeholder_url' : undefined,
       eventName: event.name,
       studentName: selectedStudent.name,
@@ -189,7 +192,7 @@ export default function PaymentPage() {
     };
 
     const newPayment = { ...paymentData, paymentDate: serverTimestamp() };
-    await addDocumentNonBlocking(collection(firestore, 'payments'), newPayment);
+    await addDocumentNonBlocking(collection(firestore, `classes/${classId}/payments`), newPayment);
     
     setShowQrDialog(false);
     setShowSuccessDialog(true);

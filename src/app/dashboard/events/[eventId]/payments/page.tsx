@@ -47,16 +47,18 @@ export default function EventPaymentsPage() {
   const { eventId } = useParams();
   const firestore = useFirestore();
   const { toast } = useToast();
+  // TODO: Replace with dynamic classId from user profile
+  const classId = 'class-1';
 
-  const eventRef = useMemoFirebase(() => firestore && eventId ? doc(firestore, 'events', eventId as string) : null, [firestore, eventId]);
+  const eventRef = useMemoFirebase(() => firestore && eventId ? doc(firestore, `classes/${classId}/events`, eventId as string) : null, [firestore, eventId]);
   const { data: event, isLoading: isEventLoading } = useDoc<Event>(eventRef);
   
-  const paymentsQuery = useMemoFirebase(() => firestore && eventId ? query(collection(firestore, 'payments'), where('eventId', '==', eventId)) : null, [firestore, eventId]);
+  const paymentsQuery = useMemoFirebase(() => firestore && eventId ? query(collection(firestore, `classes/${classId}/payments`), where('eventId', '==', eventId)) : null, [firestore, eventId]);
   const { data: transactions, isLoading: areTransactionsLoading } = useCollection<Transaction>(paymentsQuery);
   
   const handlePaymentAction = (transactionId: string, newStatus: 'Paid' | 'Failed') => {
     if (!firestore) return;
-    const paymentRef = doc(firestore, 'payments', transactionId);
+    const paymentRef = doc(firestore, `classes/${classId}/payments`, transactionId);
     updateDocumentNonBlocking(paymentRef, { status: newStatus });
 
     toast({

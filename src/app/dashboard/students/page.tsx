@@ -33,8 +33,10 @@ import { useState } from 'react';
 export default function StudentsPage() {
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState('');
+  // TODO: Replace with dynamic classId from user profile
+  const classId = 'class-1';
 
-  const studentsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'students') : null, [firestore]);
+  const studentsCollection = useMemoFirebase(() => firestore ? collection(firestore, `classes/${classId}/students`) : null, [firestore, classId]);
   const { data: students, isLoading } = useCollection<Student>(studentsCollection);
 
   const filteredStudents = students?.filter(student => 

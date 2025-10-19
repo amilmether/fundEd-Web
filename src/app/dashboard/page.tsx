@@ -37,14 +37,16 @@ import { chartData } from '@/lib/data'; // Keep using mock chart data for now
 export default function DashboardPage() {
   const firestore = useFirestore();
   const { user } = useUser();
+  // TODO: Replace with dynamic classId from user profile
+  const classId = 'class-1';
 
-  const transactionsCollection = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'payments') : null, [firestore, user]);
+  const transactionsCollection = useMemoFirebase(() => (firestore && user) ? collection(firestore, `classes/${classId}/payments`) : null, [firestore, user, classId]);
   const { data: transactions } = useCollection<Transaction>(transactionsCollection);
 
-  const eventsCollection = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'events') : null, [firestore, user]);
+  const eventsCollection = useMemoFirebase(() => (firestore && user) ? collection(firestore, `classes/${classId}/events`) : null, [firestore, user, classId]);
   const { data: events } = useCollection<Event>(eventsCollection);
 
-  const recentTransactionsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, 'payments'), limit(5)) : null, [firestore, user]);
+  const recentTransactionsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, `classes/${classId}/payments`), limit(5)) : null, [firestore, user, classId]);
   const { data: recentTransactions } = useCollection<Transaction>(recentTransactionsQuery);
 
 

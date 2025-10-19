@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import type { Student, PrintDistribution, Event } from '@/lib/types';
+import type { Student, PrintDistribution, Event, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import {
@@ -49,28 +49,30 @@ import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function PrintsPage() {
   const firestore = useFirestore();
+  // TODO: Replace with dynamic classId from user profile
+  const classId = 'class-1';
   const [open, setOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [searchValue, setSearchValue] = useState('');
   const [selectedEventId, setSelectedEventId] = useState<string | undefined>(undefined);
   const { toast } = useToast();
 
-  const printEventsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'events'), where('category', '==', 'Print')) : null, [firestore]);
+  const printEventsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, `classes/${classId}/events`), where('category', '==', 'Print')) : null, [firestore, classId]);
   const { data: printEvents } = useCollection<Event>(printEventsQuery);
 
-  const studentsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'students') : null, [firestore]);
+  const studentsQuery = useMemoFirebase(() => firestore ? collection(firestore, `classes/${classId}/students`) : null, [firestore, classId]);
   const { data: allStudents } = useCollection<Student>(studentsQuery);
   
-  const distributionsQuery = useMemoFirebase(() => selectedEventId ? query(collection(firestore, 'print_distributions'), where('eventId', '==', selectedEventId)) : null, [firestore, selectedEventId]);
+  const distributionsQuery = useMemoFirebase(() => (firestore && selectedEventId) ? query(collection(firestore, `classes/${classId}/print_distributions`), where('eventId', '==', selectedEventId)) : null, [firestore, selectedEventId, classId]);
   const { data: distributions } = useCollection<PrintDistribution>(distributionsQuery);
   
 
   const studentsWhoPaidQuery = useMemoFirebase(() => {
     if (!selectedEventId || !firestore) return null;
-    return query(collection(firestore, 'payments'), where('eventId', '==', selectedEventId), where('status', '==', 'Paid'));
-  }, [firestore, selectedEventId]);
+    return query(collection(firestore, `classes/${classId}/payments`), where('eventId', '==', selectedEventId), where('status', '==', 'Paid'));
+  }, [firestore, selectedEventId, classId]);
 
-  const { data: paidPayments } = useCollection(studentsWhoPaidQuery);
+  const { data: paidPayments } = useCollection<Payment>(studentsWhoPaidQuery);
 
   const studentsWhoPaid = useMemo(() => {
     if (!allStudents || !paidPayments || !distributions) return [];
@@ -101,7 +103,7 @@ export default function PrintsPage() {
             studentRoll: selectedStudent.rollNo,
             eventId: selectedEventId,
         };
-        addDocumentNonBlocking(collection(firestore, 'print_distributions'), {
+        addDocumentNonBlocking(collection(firestore, `classes/${classId}/print_distributions`), {
             ...newDistribution,
             distributedAt: Timestamp.now(),
         });

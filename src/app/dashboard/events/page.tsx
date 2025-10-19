@@ -58,11 +58,13 @@ import { Timestamp } from 'firebase/firestore';
 
 export default function EventsPage() {
   const firestore = useFirestore();
+  // TODO: Replace with dynamic classId from user profile
+  const classId = 'class-1';
 
-  const eventsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'events') : null, [firestore]);
+  const eventsCollection = useMemoFirebase(() => firestore ? collection(firestore, `classes/${classId}/events`) : null, [firestore, classId]);
   const { data: events, isLoading: areEventsLoading } = useCollection<Event>(eventsCollection);
 
-  const qrCodesCollection = useMemoFirebase(() => firestore ? collection(firestore, 'qrcodes') : null, [firestore]);
+  const qrCodesCollection = useMemoFirebase(() => firestore ? collection(firestore, `classes/${classId}/qrcodes`) : null, [firestore, classId]);
   const { data: qrCodes, isLoading: areQrCodesLoading } = useCollection<QrCode>(qrCodesCollection);
 
 
@@ -75,7 +77,7 @@ export default function EventsPage() {
 
 
   const handleCopyLink = (eventId: string) => {
-    const link = `${window.location.origin}/pay/${eventId}`;
+    const link = `${window.location.origin}/pay/${eventId}?classId=${classId}`;
     navigator.clipboard.writeText(link);
     toast({
       title: 'Link Copied',
@@ -128,7 +130,7 @@ export default function EventsPage() {
 
     if (selectedEvent) {
       // Update existing event
-      const eventRef = doc(firestore, 'events', selectedEvent.id);
+      const eventRef = doc(firestore, `classes/${classId}/events`, selectedEvent.id);
       const dataToUpdate = {
         ...eventData,
         // We preserve the collected/pending amounts
@@ -144,7 +146,7 @@ export default function EventsPage() {
         totalCollected: 0,
         totalPending: 0,
       };
-      addDocumentNonBlocking(collection(firestore, 'events'), dataToCreate);
+      addDocumentNonBlocking(collection(firestore, `classes/${classId}/events`), dataToCreate);
       toast({ title: 'Event Created' });
     }
 

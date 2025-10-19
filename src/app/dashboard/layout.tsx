@@ -127,10 +127,12 @@ export default function DashboardLayout({
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  // TODO: Replace with dynamic classId from user profile
+  const classId = 'class-1';
 
   const pendingTransactionsQuery = useMemoFirebase(() =>
-    (firestore && user) ? query(collection(firestore, 'payments'), where('status', '==', 'Verification Pending')) : null,
-  [firestore, user]);
+    (firestore && user) ? query(collection(firestore, `classes/${classId}/payments`), where('status', '==', 'Verification Pending')) : null,
+  [firestore, user, classId]);
 
   const { data: pendingTransactions } = useCollection<Transaction>(pendingTransactionsQuery);
 
