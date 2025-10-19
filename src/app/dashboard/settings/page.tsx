@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Trash2, PlusCircle, Loader2 } from 'lucide-react';
-import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -196,7 +195,7 @@ export default function SettingsPage() {
             {qrCodes?.map(qr => (
               <Card key={qr.id}>
                 <CardContent className="p-4 flex flex-col items-center justify-center gap-4">
-                   <Image
+                   <img
                       src={qr.url}
                       alt={qr.name}
                       width={150}
