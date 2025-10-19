@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Upload, Check, ChevronsUpDown, QrCode } from 'lucide-react';
+import { Upload, Check, ChevronsUpDown, QrCode, Loader2 } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -46,7 +46,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, Timestamp, query, where } from 'firebase/firestore';
 import type { Event, Student, Payment } from '@/lib/types';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
@@ -63,7 +63,7 @@ export default function PaymentPage() {
   const [searchValue, setSearchValue] = useState('');
   const [showQrDialog, setShowQrDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { toast } = useToast();
 
@@ -71,20 +71,33 @@ export default function PaymentPage() {
   const { data: event, isLoading: isEventLoading } = useDoc<Event>(eventRef);
 
   const studentsRef = useMemoFirebase(() => firestore && classId ? collection(firestore, `classes/${classId}/students`) : null, [firestore, classId]);
-  const { data: students, isLoading: areStudentsLoading } = useCollection<Student>(studentsRef);
+  const { data: allStudents, isLoading: areStudentsLoading } = useCollection<Student>(studentsRef);
+
+  const paymentsQuery = useMemoFirebase(() => firestore && eventId && classId ? query(collection(firestore, `classes/${classId}/payments`), where('eventId', '==', eventId)) : null, [firestore, eventId, classId]);
+  const { data: payments, isLoading: arePaymentsLoading } = useCollection<Payment>(paymentsQuery);
+
+  const paidStudentIds = useMemo(() => {
+    if (!payments) return new Set();
+    return new Set(payments.map(p => p.studentId));
+  }, [payments]);
+
+  const availableStudents = useMemo(() => {
+      if (!allStudents) return [];
+      return allStudents.filter(student => !paidStudentIds.has(student.id));
+  }, [allStudents, paidStudentIds])
 
   const filteredStudents = useMemo(() => {
-    if (!students) return [];
-    if (!searchValue) return students;
-    return students.filter(
+    if (!availableStudents) return [];
+    if (!searchValue) return availableStudents;
+    return availableStudents.filter(
       (student) =>
         student.name.toLowerCase().includes(searchValue.toLowerCase()) ||
         student.rollNo.toLowerCase().includes(searchValue.toLowerCase())
     );
-  }, [searchValue, students]);
+  }, [searchValue, availableStudents]);
 
 
-  if (isEventLoading || areStudentsLoading) {
+  if (isEventLoading || areStudentsLoading || arePaymentsLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background">
         <p>Loading...</p>
@@ -108,6 +121,9 @@ export default function PaymentPage() {
   }
 
   const getButtonText = () => {
+    if (isSubmitting) {
+        return <Loader2 className="h-5 w-5 animate-spin" />
+    }
     if (!selectedMethod) return `Pay ₹${event.cost.toLocaleString()}`;
     switch (selectedMethod) {
       case 'razorpay':
@@ -121,7 +137,32 @@ export default function PaymentPage() {
     }
   };
 
+  const handlePaymentSubmission = (paymentMethod: Payment['paymentMethod'], status: Payment['status'], transactionIdPrefix: string) => {
+    if (!selectedStudent || !classId || !firestore) return;
+    setIsSubmitting(true);
+    
+    const paymentData: Omit<Payment, 'id' | 'paymentDate'> = {
+      studentId: selectedStudent.id,
+      eventId: event.id,
+      amount: event.cost,
+      transactionId: `${transactionIdPrefix}_${Date.now()}`,
+      status: status,
+      eventName: event.name,
+      studentName: selectedStudent.name,
+      studentRoll: selectedStudent.rollNo,
+      paymentMethod: paymentMethod,
+    };
+    
+    const newPayment = { ...paymentData, paymentDate: serverTimestamp() };
+    addDocumentNonBlocking(collection(firestore, `classes/${classId}/payments`), newPayment);
+
+    setShowSuccessDialog(true);
+    setIsSubmitting(false);
+  }
+
   const handlePayClick = () => {
+    if (isSubmitting) return;
+
     if (selectedMethod === 'qr') {
       if (event.qrCodeUrl) {
         setShowQrDialog(true);
@@ -133,76 +174,21 @@ export default function PaymentPage() {
         })
       }
     } else if (selectedMethod === 'razorpay') {
-      // In a real app, this would redirect to Razorpay
-      toast({ title: "Redirecting to Razorpay..."});
-      if (!selectedStudent || !classId) return;
-      
-      const paymentData: Omit<Payment, 'id' | 'paymentDate'> = {
-        studentId: selectedStudent.id,
-        eventId: event.id,
-        amount: event.cost,
-        transactionId: `RAZORPAY_${Date.now()}`,
-        status: 'Paid',
-        eventName: event.name,
-        studentName: selectedStudent.name,
-        studentRoll: selectedStudent.rollNo,
-        paymentMethod: 'Razorpay'
-      };
-      
-      const newPayment = { ...paymentData, paymentDate: serverTimestamp() };
-      addDocumentNonBlocking(collection(firestore, `classes/${classId}/payments`), newPayment);
-
-      setShowSuccessDialog(true);
+      toast({ title: "Processing Razorpay payment..."});
+      handlePaymentSubmission('Razorpay', 'Paid', 'RAZORPAY');
     } else if (selectedMethod === 'cash') {
-      if (!selectedStudent || !classId) return;
-       const paymentData: Omit<Payment, 'id' | 'paymentDate'> = {
-        studentId: selectedStudent.id,
-        eventId: event.id,
-        amount: event.cost,
-        transactionId: `CASH_${Date.now()}`,
-        status: 'Verification Pending',
-        eventName: event.name,
-        studentName: selectedStudent.name,
-        studentRoll: selectedStudent.rollNo,
-        paymentMethod: 'Cash'
-      };
-      
-      const newPayment = { ...paymentData, paymentDate: serverTimestamp() };
-      addDocumentNonBlocking(collection(firestore, `classes/${classId}/payments`), newPayment);
-
-       setShowSuccessDialog(true);
+      handlePaymentSubmission('Cash', 'Verification Pending', 'CASH');
     }
   };
 
-  const handleSubmit = async () => {
-    if (!selectedStudent || !firestore || !classId) return;
-    // In a real app, upload screenshotFile to Firebase Storage
-    
-    const paymentData: Omit<Payment, 'id' | 'paymentDate'> = {
-      studentId: selectedStudent.id,
-      eventId: event.id,
-      amount: event.cost,
-      transactionId: `QR_${Date.now()}`,
-      status: 'Verification Pending',
-      screenshotUrl: screenshotFile ? 'placeholder_url' : undefined,
-      eventName: event.name,
-      studentName: selectedStudent.name,
-      studentRoll: selectedStudent.rollNo,
-      paymentMethod: 'QR Scan'
-    };
+  const handleSubmitQrPayment = async () => {
+    if (isSubmitting) return;
 
-    const newPayment = { ...paymentData, paymentDate: serverTimestamp() };
-    await addDocumentNonBlocking(collection(firestore, `classes/${classId}/payments`), newPayment);
-    
+    setIsSubmitting(true);
+    handlePaymentSubmission('QR Scan', 'Verification Pending', 'QR');
     setShowQrDialog(false);
-    setShowSuccessDialog(true);
+    // Success dialog is shown by handlePaymentSubmission
   }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setScreenshotFile(e.target.files[0]);
-    }
-  };
 
 
   return (
@@ -253,7 +239,7 @@ export default function PaymentPage() {
                         onValueChange={setSearchValue}
                       />
                        <CommandList>
-                        <CommandEmpty>No student found.</CommandEmpty>
+                        <CommandEmpty>No student found or all have paid.</CommandEmpty>
                         <CommandGroup>
                           {filteredStudents.map((student) => (
                             <CommandItem
@@ -318,7 +304,7 @@ export default function PaymentPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" size="lg" disabled={!selectedStudent || !selectedMethod} onClick={handlePayClick}>
+            <Button className="w-full" size="lg" disabled={!selectedStudent || !selectedMethod || isSubmitting} onClick={handlePayClick}>
               {getButtonText()}
             </Button>
           </CardFooter>
@@ -335,7 +321,7 @@ export default function PaymentPage() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               Use any UPI app to scan the QR code below to pay ₹{event.cost.toLocaleString()} for {event.name}.
-              After paying, upload a screenshot for verification.
+              After paying, click the submit button below for verification.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex justify-center p-4">
@@ -347,18 +333,12 @@ export default function PaymentPage() {
               className="rounded-lg border"
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="screenshot">Upload Screenshot</Label>
-            <div className="flex items-center gap-2">
-              <Input id="screenshot" type="file" className="flex-1" accept="image/*" onChange={handleFileChange} />
-              <Button variant="outline" size="icon">
-                <Upload className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
           <AlertDialogFooter>
-            <Button variant="outline" onClick={() => setShowQrDialog(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={!screenshotFile}>Submit for Verification</Button>
+            <Button variant="outline" onClick={() => setShowQrDialog(false)} disabled={isSubmitting}>Cancel</Button>
+            <Button onClick={handleSubmitQrPayment} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Submit for Verification
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -384,3 +364,5 @@ export default function PaymentPage() {
     </>
   );
 }
+
+    
