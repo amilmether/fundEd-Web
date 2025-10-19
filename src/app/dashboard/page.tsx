@@ -29,21 +29,22 @@ import {
   ChartLegendContent,
 } from '@/components/ui/chart';
 import { Bar, BarChart as RechartsBarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
 import type { Transaction, Event } from '@/lib/types';
 import { chartData } from '@/lib/data'; // Keep using mock chart data for now
 
 export default function DashboardPage() {
   const firestore = useFirestore();
+  const { user } = useUser();
 
-  const transactionsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'payments') : null, [firestore]);
+  const transactionsCollection = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'payments') : null, [firestore, user]);
   const { data: transactions } = useCollection<Transaction>(transactionsCollection);
 
-  const eventsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'events') : null, [firestore]);
+  const eventsCollection = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'events') : null, [firestore, user]);
   const { data: events } = useCollection<Event>(eventsCollection);
 
-  const recentTransactionsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'payments'), limit(5)) : null, [firestore]);
+  const recentTransactionsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, 'payments'), limit(5)) : null, [firestore, user]);
   const { data: recentTransactions } = useCollection<Transaction>(recentTransactionsQuery);
 
 

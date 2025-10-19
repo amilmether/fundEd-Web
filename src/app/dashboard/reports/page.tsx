@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import type { Transaction } from '@/lib/types';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, Timestamp } from 'firebase/firestore';
 
 const getStatusBadgeVariant = (status: Transaction['status']) => {
@@ -44,7 +44,8 @@ const getStatusBadgeVariant = (status: Transaction['status']) => {
 
 export default function ReportsPage() {
   const firestore = useFirestore();
-  const transactionsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'payments') : null, [firestore]);
+  const { user } = useUser();
+  const transactionsCollection = useMemoFirebase(() => (firestore && user) ? collection(firestore, 'payments') : null, [firestore, user]);
   const { data: transactions, isLoading } = useCollection<Transaction>(transactionsCollection);
 
   const StatusBadge = ({ status }: { status: Transaction['status'] }) => {

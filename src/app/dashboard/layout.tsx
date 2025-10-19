@@ -129,8 +129,8 @@ export default function DashboardLayout({
   const firestore = useFirestore();
 
   const pendingTransactionsQuery = useMemoFirebase(() =>
-    firestore ? query(collection(firestore, 'payments'), where('status', '==', 'Verification Pending')) : null,
-  [firestore]);
+    (firestore && user) ? query(collection(firestore, 'payments'), where('status', '==', 'Verification Pending')) : null,
+  [firestore, user]);
 
   const { data: pendingTransactions } = useCollection<Transaction>(pendingTransactionsQuery);
 
@@ -144,7 +144,7 @@ export default function DashboardLayout({
     auth.signOut();
   }
 
-  if (isUserLoading) {
+  if (isUserLoading || !user) {
     return <div className="flex min-h-screen items-center justify-center">Loading...</div>
   }
 
