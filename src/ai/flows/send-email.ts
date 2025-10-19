@@ -2,11 +2,12 @@
 /**
  * @fileOverview A Genkit flow for sending print distribution emails.
  *
- * This file defines a Genkit flow that composes and "sends" an email
+ * This file defines a Genkit flow that composes and sends an email
  * to a student when they receive a print distribution.
  */
 
 import { ai } from '@/ai/genkit';
+import { sendEmail } from '@/lib/email';
 import { z } from 'zod';
 
 export const SendEmailInputSchema = z.object({
@@ -55,17 +56,25 @@ export const sendPrintDistributionEmailFlow = ai.defineFlow(
 
     const { text: emailBody } = await emailPrompt(input);
 
-    // In a real application, you would integrate an email service like SendGrid or Nodemailer here.
-    // For this example, we will just log the email to the console to simulate sending.
-    console.log('--- SIMULATING EMAIL ---');
-    console.log(`To: ${input.studentEmail}`);
-    console.log(`Subject: Your print for "${input.eventName}" has been distributed!`);
-    console.log(`Body:\n${emailBody}`);
-    console.log('------------------------');
+    const subject = `Your print for "${input.eventName}" has been distributed!`;
+    
+    // Use the new email service to send the email.
+    const result = await sendEmail({
+        to: input.studentEmail,
+        subject: subject,
+        html: emailBody.replace(/\n/g, '<br>'), // Convert newlines to breaks for HTML email
+    });
 
-    return {
-      success: true,
-      message: `Email successfully generated and logged for ${input.studentEmail}.`,
-    };
+    if (result.success) {
+        return {
+            success: true,
+            message: `Email successfully sent to ${input.studentEmail}.`,
+        };
+    } else {
+        return {
+            success: false,
+            message: result.message || 'Failed to send email via the email service.',
+        };
+    }
   }
 );
