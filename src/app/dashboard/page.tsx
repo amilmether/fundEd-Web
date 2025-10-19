@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/table';
 import {
   DollarSign,
-  Users,
   Wallet,
   Activity,
 } from 'lucide-react';
@@ -30,7 +29,7 @@ import {
 } from '@/components/ui/chart';
 import { Bar, BarChart as RechartsBarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, limit, orderBy } from 'firebase/firestore';
+import { collection, query, limit, orderBy } from 'firebase/firestore';
 import type { Transaction, Event } from '@/lib/types';
 import { chartData } from '@/lib/data'; // Keep using mock chart data for now
 

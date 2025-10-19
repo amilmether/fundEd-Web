@@ -25,7 +25,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +40,7 @@ import { Logo } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Badge } from '@/components/ui/badge';
-import type { Transaction, Event } from '@/lib/types';
+import type { Transaction } from '@/lib/types';
 import { useAuth, useCollection, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
@@ -92,12 +92,13 @@ function MobileNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="flex flex-col p-0">
-        <div className="flex h-16 items-center px-4 border-b">
+        <SheetHeader className="p-4 border-b">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <Logo className="h-6 w-6 text-primary" />
             <span className="font-headline">FundEd</span>
           </Link>
-        </div>
+           <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+        </SheetHeader>
         <nav className="flex-1 overflow-y-auto p-4">
             <MainNav />
         </nav>
