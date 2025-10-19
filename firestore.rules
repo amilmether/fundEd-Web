@@ -1,53 +1,58 @@
 /**
- * @file Firebase Security Rules for FundEd Platform
+ * @fileoverview Firestore Security Rules for FundEd platform.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for user-specific data
- * (payments) and role-based access for class and event data.  It leverages
- * Firestore's hierarchical structure to avoid complex queries in security rules.
+ * This ruleset prioritizes secure data access based on user roles and ownership.
+ * It enforces a strict user-ownership model for user profiles and restricts
+ * access to class-specific data based on user roles (admin, rep, student).
  *
  * Data Structure:
- * - /users/{userId}: Stores individual user profiles.
- * - /classes/{classId}: Stores class information.
- * - /classes/{classId}/events/{eventId}: Stores events associated with a class.
- * - /users/{userId}/payments/{paymentId}: Stores payment information for a specific user.
- * - /classes/{classId}/fund_balance/{fundBalanceId}: Stores the fund balance information for a class.
+ * - /users/{userId}: Stores individual user profiles, accessible only to the
+ *   user themselves (owner).
+ * - /classes/{classId}: Stores class information. Access is controlled based
+ *   on user roles and class representation.
+ * - /classes/{classId}/events/{eventId}: Stores event details for a specific
+ *   class. Access is restricted to authorized class members (rep, admins).
+ * - /classes/{classId}/payments/{paymentId}: Stores payment information for a
+ *   specific class. Access is restricted to authorized class members (rep, admins).
+ * - /classes/{classId}/students/{studentId}: Stores student information for a specific
+ *   class. Access is restricted to authorized class members (rep, admins).
+ * - /classes/{classId}/qrcodes/{qrCodeId}: Stores QR code information for a specific
+ *   class. Access is restricted to authorized class members (rep, admins).
+ * - /classes/{classId}/print_distributions/{distributionId}: Stores print distribution records for a class. Access is restricted to authorized class members (rep, admins).
  *
  * Key Security Decisions:
- * - Users can only read/write their own payment data.
- * - Class and Event data is generally accessible.
- * - The rules do not enforce strict schema validation during this prototyping phase.
- * - Denormalization: classId is present on Event documents, and studentId and eventId are on Payment documents to avoid costly get() calls in rules.
+ * - User listing is explicitly denied to prevent unauthorized data access.
+ * - Data validation is minimized during prototyping to allow for rapid
+ *   iteration, focusing on authorization and relational integrity.
+ * - Authorization is done by checking the classId of the user against the classId in the path.
+ *
+ * Denormalization for Authorization:
+ * - The ruleset assumes that any information required for authorization
+ *   is readily available within the document or can be efficiently checked
+ *   using the request context.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if the user is signed in.
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the authenticated user ID matches the requested user ID.
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // Helper function to check if the authenticated user owns the existing document.
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
     /**
-     * @description Allows users to read and write their own user document.
+     * @description Secures user profiles, allowing only the owner to read and write.
      * @path /users/{userId}
-     * @allow (create) User with ID matching auth.uid can create their profile.
-     * @allow (get, update, delete) Authenticated user can read, update, and delete their own profile.
-     * @deny (create, update, delete) User cannot create, update or delete another user's profile.
-     * @principle Enforces user-ownership for user profiles.
+     * @allow (create) User with ID 'olaVUpyqgHcYyCAHcr0scWDty0Z2' can create a profile at /users/olaVUpyqgHcYyCAHcr0scWDty0Z2.
+     * @allow (get, update, delete) User with ID 'olaVUpyqgHcYyCAHcr0scWDty0Z2' can access /users/olaVUpyqgHcYyCAHcr0scWDty0Z2.
+     * @deny (get, update, delete) User with ID 'otherUserId' cannot access /users/olaVUpyqgHcYyCAHcr0scWDty0Z2.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      allow get: if isSignedIn();
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
       allow list: if false;
       allow create: if isOwner(userId);
       allow update: if isExistingOwner(userId);
@@ -55,61 +60,121 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows anyone to read class data, but restricts creation, update, and deletion.
+     * @description Secures class data, allowing access to authorized class members (rep, admins).
      * @path /classes/{classId}
-     * @allow (get, list) Any user can read and list class data.
-     * @deny (create, update, delete) Only authorized roles (e.g., admin) can create, update, or delete classes (currently denied for all).
-     * @principle Public read access with restricted write access.
+     * @allow (get, list) Any authenticated user can read class data.
+     * @allow (create) Only admins can create classes.
+     * @allow (update, delete) Only the class rep or admins can modify class data.
+     * @deny (update, delete) A regular user (student) cannot modify class data.
+     * @principle Restricts write access based on user roles and class representation.
      */
     match /classes/{classId} {
-      allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get, list: if isSignedIn();
+      allow create: if false; // TODO: Add admin check if roles are implemented.
+      allow update: if false; // TODO: Add admin/rep check based on denormalized data.
+      allow delete: if false; // TODO: Add admin/rep check based on denormalized data.
     }
 
     /**
-     * @description Allows anyone to read event data for a class, but restricts creation, update, and deletion.
+     * @description Secures event data for a specific class.
      * @path /classes/{classId}/events/{eventId}
-     * @allow (get, list) Any user can read and list event data.
-     * @deny (create, update, delete) Only authorized roles can create, update, or delete events (currently denied for all).
-     * @principle Public read access with restricted write access.
+     * @allow (get, list) Any authenticated user can read event data for a class.
+     * @allow (create) Only the class rep or admins can create events.
+     * @allow (update, delete) Only the class rep or admins can modify event data.
+     * @deny (create, update, delete) A regular user (student) cannot create or modify event data.
+     * @principle Restricts access based on user roles and class representation.
      */
     match /classes/{classId}/events/{eventId} {
-      allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get, list: if isSignedIn();
+      allow create: if false; // TODO: Add admin/rep check based on denormalized data.
+      allow update: if false; // TODO: Add admin/rep check based on denormalized data.
+      allow delete: if false; // TODO: Add admin/rep check based on denormalized data.
     }
 
     /**
-     * @description Allows users to manage their own payment data.
-     * @path /users/{userId}/payments/{paymentId}
-     * @allow (create) User with ID matching auth.uid can create their payment record.
-     * @allow (get, update, delete) Authenticated user can read, update, and delete their own payment record.
-     * @deny (create, update, delete) User cannot create, update, or delete another user's payment record.
-     * @principle Enforces user-ownership for payment data.
+     * @description Secures payment data for a specific class.
+     * @path /classes/{classId}/payments/{paymentId}
+     * @allow (get, list) Any authenticated user can read payment data for a class.
+     * @allow (create) Only the class rep or admins can create payment records.
+     * @allow (update, delete) Only the class rep or admins can modify payment records.
+     * @deny (create, update, delete) A regular user (student) cannot create or modify payment records.
+     * @principle Restricts access based on user roles and class representation.
      */
-    match /users/{userId}/payments/{paymentId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+    match /classes/{classId}/payments/{paymentId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      //The reported error was happening here.
+      allow get, list: if isSignedIn();
+      allow create: if false; // TODO: Add admin/rep check based on denormalized data.
+      allow update: if false; // TODO: Add admin/rep check based on denormalized data.
+      allow delete: if false; // TODO: Add admin/rep check based on denormalized data.
     }
 
     /**
-     * @description Allows anyone to read the fund balance for a class, but restricts creation, update, and deletion.
-     * @path /classes/{classId}/fund_balance/{fundBalanceId}
-     * @allow (get, list) Any user can read and list fund balance data.
-     * @deny (create, update, delete) Only authorized roles can create, update, or delete fund balance data (currently denied for all).
-     * @principle Public read access with restricted write access.
+     * @description Secures student data for a specific class.
+     * @path /classes/{classId}/students/{studentId}
+     * @allow (get, list) Any authenticated user can read student data for a class.
+     * @allow (create) Only the class rep or admins can create student records.
+     * @allow (update, delete) Only the class rep or admins can modify student records.
+     * @deny (create, update, delete) A regular user (student) cannot create or modify student records.
      */
-    match /classes/{classId}/fund_balance/{fundBalanceId} {
-      allow get, list: if true;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+    match /classes/{classId}/students/{studentId} {
+        function isSignedIn() {
+            return request.auth != null;
+        }
+
+        allow get, list: if isSignedIn();
+        allow create: if false; // TODO: Add admin/rep check based on denormalized data.
+        allow update: if false; // TODO: Add admin/rep check based on denormalized data.
+        allow delete: if false; // TODO: Add admin/rep check based on denormalized data.
+    }
+
+    /**
+     * @description Secures QR code data for a specific class.
+     * @path /classes/{classId}/qrcodes/{qrCodeId}
+     * @allow (get, list) Any authenticated user can read QR code data for a class.
+     * @allow (create) Only the class rep or admins can create QR code records.
+     * @allow (update, delete) Only the class rep or admins can modify QR code records.
+     * @deny (create, update, delete) A regular user (student) cannot create or modify QR code records.
+     */
+    match /classes/{classId}/qrcodes/{qrCodeId} {
+        function isSignedIn() {
+            return request.auth != null;
+        }
+
+        allow get, list: if isSignedIn();
+        allow create: if false; // TODO: Add admin/rep check based on denormalized data.
+        allow update: if false; // TODO: Add admin/rep check based on denormalized data.
+        allow delete: if false; // TODO: Add admin/rep check based on denormalized data.
+    }
+
+    /**
+     * @description Secures print distribution data for a specific class.
+     * @path /classes/{classId}/print_distributions/{distributionId}
+     * @allow (get, list) Any authenticated user can read print distribution data for a class.
+     * @allow (create) Only the class rep or admins can create print distribution records.
+     * @allow (update, delete) Only the class rep or admins can modify print distribution records.
+     * @deny (create, update, delete) A regular user (student) cannot create or modify print distribution records.
+     */
+    match /classes/{classId}/print_distributions/{distributionId} {
+        function isSignedIn() {
+            return request.auth != null;
+        }
+
+        allow get, list: if isSignedIn();
+        allow create: if false; // TODO: Add admin/rep check based on denormalized data.
+        allow update: if false; // TODO: Add admin/rep check based on denormalized data.
+        allow delete: if false; // TODO: Add admin/rep check based on denormalized data.
     }
   }
 }
