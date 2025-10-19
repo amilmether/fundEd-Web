@@ -150,7 +150,7 @@ export default function PrintsPage() {
             Manage the distribution of prints to students who have paid.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 md:grid-cols-2">
+        <CardContent className="grid gap-4 md:grid-cols-2 md:gap-6">
             <div className="grid gap-2">
               <Label>Select Print Event</Label>
               <Select onValueChange={setSelectedEventId}>

@@ -201,14 +201,13 @@ export default function EventPaymentsPage() {
                     <span className="text-muted-foreground">Method</span>
                     <span>{transaction.paymentMethod}</span>
                   </div>
-                </CardContent>
-                {transaction.status === 'Verification Pending' && (
-                  <CardContent>
-                    <div className="flex justify-end gap-2">
+                   {transaction.status === 'Verification Pending' && (
+                    <div className="flex items-center justify-between text-sm pt-4 border-t">
+                        <span className="text-muted-foreground">Actions</span>
                        <PaymentActions transaction={transaction}/>
                     </div>
-                  </CardContent>
-                )}
+                  )}
+                </CardContent>
               </Card>
             ))}
         </div>
