@@ -99,23 +99,8 @@ export default function PaymentPage() {
   }, [searchValue, availableStudents]);
 
 
-  if (isEventLoading || areStudentsLoading || arePaymentsLoading) {
+  if (isEventLoading || areStudentsLoading || arePaymentsLoading || !event || !classId) {
     return <BrandedLoader />;
-  }
-
-  if (!event || !classId) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Event Not Found</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>The event you are looking for does not exist or the class is not specified.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
   }
 
   const getButtonText = () => {
