@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -20,11 +19,13 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { events, transactions as initialTransactions } from '@/lib/data';
 import { ArrowLeft, Check, X } from 'lucide-react';
-import type { Transaction } from '@/lib/types';
-import { useState } from 'react';
+import type { Transaction, Event } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, query, where, Timestamp } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 
 const getStatusBadgeVariant = (status: Transaction['status']) => {
   switch (status) {
@@ -44,25 +45,35 @@ const getStatusBadgeVariant = (status: Transaction['status']) => {
 
 export default function EventPaymentsPage() {
   const { eventId } = useParams();
-  const event = events.find((e) => e.id === eventId);
-  const [transactions, setTransactions] = useState(initialTransactions);
+  const firestore = useFirestore();
   const { toast } = useToast();
 
-  const eventTransactions = transactions.filter(
-    (t) => t.eventName === event?.name
-  );
+  const eventRef = useMemoFirebase(() => firestore && eventId ? doc(firestore, 'events', eventId as string) : null, [firestore, eventId]);
+  const { data: event, isLoading: isEventLoading } = useDoc<Event>(eventRef);
+  
+  const paymentsQuery = useMemoFirebase(() => firestore && eventId ? query(collection(firestore, 'payments'), where('eventId', '==', eventId)) : null, [firestore, eventId]);
+  const { data: transactions, isLoading: areTransactionsLoading } = useCollection<Transaction>(paymentsQuery);
   
   const handlePaymentAction = (transactionId: string, newStatus: 'Paid' | 'Failed') => {
-    setTransactions(prevTransactions =>
-      prevTransactions.map(t =>
-        t.id === transactionId ? { ...t, status: newStatus } : t
-      )
-    );
+    if (!firestore) return;
+    const paymentRef = doc(firestore, 'payments', transactionId);
+    updateDocumentNonBlocking(paymentRef, { status: newStatus });
+
     toast({
         title: "Payment Status Updated",
         description: `Transaction ${transactionId} has been marked as ${newStatus}.`
     })
   };
+
+  if (isEventLoading || areTransactionsLoading) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Loading...</CardTitle>
+            </CardHeader>
+        </Card>
+    )
+  }
 
   if (!event) {
     return (
@@ -139,7 +150,7 @@ export default function EventPaymentsPage() {
       <CardContent>
          {/* Mobile View */}
         <div className="grid gap-4 md:hidden">
-            {eventTransactions.map(transaction => (
+            {transactions?.map(transaction => (
               <Card key={transaction.id} className="w-full">
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -157,7 +168,7 @@ export default function EventPaymentsPage() {
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Date</span>
-                    <span>{new Date(transaction.date).toLocaleDateString()}</span>
+                    <span>{new Date(transaction.paymentDate instanceof Timestamp ? transaction.paymentDate.toDate() : transaction.paymentDate).toLocaleDateString()}</span>
                   </div>
                    <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Method</span>
@@ -189,7 +200,7 @@ export default function EventPaymentsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {eventTransactions.map((transaction) => (
+            {transactions?.map((transaction) => (
               <TableRow key={transaction.id}>
                 <TableCell className="font-code">{transaction.id}</TableCell>
                 <TableCell>
@@ -199,7 +210,7 @@ export default function EventPaymentsPage() {
                   </div>
                 </TableCell>
                 <TableCell>₹{transaction.amount.toLocaleString()}</TableCell>
-                <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(transaction.paymentDate instanceof Timestamp ? transaction.paymentDate.toDate() : transaction.paymentDate).toLocaleDateString()}</TableCell>
                 <TableCell>{transaction.paymentMethod}</TableCell>
                 <TableCell>
                    <StatusBadge status={transaction.status} />
@@ -211,7 +222,7 @@ export default function EventPaymentsPage() {
             ))}
           </TableBody>
         </Table>
-        {eventTransactions.length === 0 && (
+        {transactions?.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
                 No payments found for this event.
             </div>

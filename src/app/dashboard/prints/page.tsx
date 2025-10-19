@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -33,8 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { events, students as allStudents, printDistributions as initialDistributions } from '@/lib/data';
-import type { Student, PrintDistribution } from '@/lib/types';
+import type { Student, PrintDistribution, Event } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import {
@@ -45,26 +43,44 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where, Timestamp } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function PrintsPage() {
+  const firestore = useFirestore();
   const [open, setOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [searchValue, setSearchValue] = useState('');
-  const [distributions, setDistributions] = useState<PrintDistribution[]>(initialDistributions);
   const [selectedEventId, setSelectedEventId] = useState<string | undefined>(undefined);
   const { toast } = useToast();
+
+  const printEventsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'events'), where('category', '==', 'Print')) : null, [firestore]);
+  const { data: printEvents } = useCollection<Event>(printEventsQuery);
+
+  const studentsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'students') : null, [firestore]);
+  const { data: allStudents } = useCollection<Student>(studentsQuery);
   
-  const printEvents = events.filter(e => e.name.toLowerCase().includes('print'));
+  const distributionsQuery = useMemoFirebase(() => selectedEventId ? query(collection(firestore, 'print_distributions'), where('eventId', '==', selectedEventId)) : null, [firestore, selectedEventId]);
+  const { data: distributions } = useCollection<PrintDistribution>(distributionsQuery);
+  
+
+  const studentsWhoPaidQuery = useMemoFirebase(() => {
+    if (!selectedEventId || !firestore) return null;
+    return query(collection(firestore, 'payments'), where('eventId', '==', selectedEventId), where('status', '==', 'Paid'));
+  }, [firestore, selectedEventId]);
+
+  const { data: paidPayments } = useCollection(studentsWhoPaidQuery);
 
   const studentsWhoPaid = useMemo(() => {
-    if (!selectedEventId) return [];
-    // In a real app, this would be a filtered list of students who have paid for this specific event.
-    // For now, we'll just use the full student list, excluding those already in the distribution list for this event.
-    const distributedStudentIds = distributions
-        .filter(d => d.eventId === selectedEventId)
-        .map(d => d.studentId);
-    return allStudents.filter(s => !distributedStudentIds.includes(s.id));
-  }, [selectedEventId, distributions]);
+    if (!allStudents || !paidPayments || !distributions) return [];
+    
+    const paidStudentIds = paidPayments.map(p => p.studentId);
+    const distributedStudentIds = distributions.map(d => d.studentId);
+
+    return allStudents.filter(s => paidStudentIds.includes(s.id) && !distributedStudentIds.includes(s.id));
+  }, [allStudents, paidPayments, distributions]);
+
 
   const filteredStudents = useMemo(() => {
     if (!searchValue) return studentsWhoPaid;
@@ -75,19 +91,20 @@ export default function PrintsPage() {
     );
   }, [searchValue, studentsWhoPaid]);
   
-  const eventDistributions = distributions.filter(d => d.eventId === selectedEventId);
+  const eventDistributions = distributions;
 
   const handleDistribute = () => {
-    if (selectedStudent && selectedEventId) {
-        const newDistribution: PrintDistribution = {
-            id: `DIST-${Date.now()}`,
+    if (selectedStudent && selectedEventId && firestore) {
+        const newDistribution: Omit<PrintDistribution, 'id' | 'distributedAt'> = {
             studentId: selectedStudent.id,
             studentName: selectedStudent.name,
             studentRoll: selectedStudent.rollNo,
             eventId: selectedEventId,
-            distributedAt: new Date().toISOString(),
         };
-        setDistributions(prev => [newDistribution, ...prev]);
+        addDocumentNonBlocking(collection(firestore, 'print_distributions'), {
+            ...newDistribution,
+            distributedAt: Timestamp.now(),
+        });
         toast({
             title: 'Print Distributed',
             description: `${selectedStudent.name} has received their prints.`,
@@ -115,7 +132,7 @@ export default function PrintsPage() {
                   <SelectValue placeholder="Select an event" />
                 </SelectTrigger>
                 <SelectContent>
-                  {printEvents.map(event => (
+                  {printEvents?.map(event => (
                     <SelectItem key={event.id} value={event.id}>{event.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -194,7 +211,7 @@ export default function PrintsPage() {
         <CardContent>
           {/* Mobile View */}
           <div className="grid gap-4 md:hidden">
-              {eventDistributions.map(dist => (
+              {eventDistributions?.map(dist => (
                   <Card key={dist.id}>
                     <CardContent className="p-4 flex justify-between items-center">
                         <div>
@@ -202,8 +219,8 @@ export default function PrintsPage() {
                             <p className="text-sm text-muted-foreground">{dist.studentRoll}</p>
                         </div>
                         <div className="text-right text-sm text-muted-foreground">
-                            <p>{new Date(dist.distributedAt).toLocaleDateString()}</p>
-                            <p>{new Date(dist.distributedAt).toLocaleTimeString()}</p>
+                            <p>{new Date(dist.distributedAt instanceof Timestamp ? dist.distributedAt.toDate() : dist.distributedAt).toLocaleDateString()}</p>
+                            <p>{new Date(dist.distributedAt instanceof Timestamp ? dist.distributedAt.toDate() : dist.distributedAt).toLocaleTimeString()}</p>
                         </div>
                     </CardContent>
                   </Card>
@@ -220,17 +237,17 @@ export default function PrintsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {eventDistributions.map(dist => (
+              {eventDistributions?.map(dist => (
                 <TableRow key={dist.id}>
                   <TableCell className="font-medium">{dist.studentName}</TableCell>
                   <TableCell>{dist.studentRoll}</TableCell>
-                  <TableCell>{new Date(dist.distributedAt).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(dist.distributedAt).toLocaleTimeString()}</TableCell>
+                  <TableCell>{new Date(dist.distributedAt instanceof Timestamp ? dist.distributedAt.toDate() : dist.distributedAt).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(dist.distributedAt instanceof Timestamp ? dist.distributedAt.toDate() : dist.distributedAt).toLocaleTimeString()}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-           {eventDistributions.length === 0 && (
+           {eventDistributions?.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
                 No distribution history for this event yet.
             </div>

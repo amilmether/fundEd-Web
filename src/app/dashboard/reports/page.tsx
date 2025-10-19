@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -21,10 +20,11 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { transactions } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import type { Transaction } from '@/lib/types';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, Timestamp } from 'firebase/firestore';
 
 const getStatusBadgeVariant = (status: Transaction['status']) => {
   switch (status) {
@@ -43,6 +43,10 @@ const getStatusBadgeVariant = (status: Transaction['status']) => {
 
 
 export default function ReportsPage() {
+  const firestore = useFirestore();
+  const transactionsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'payments') : null, [firestore]);
+  const { data: transactions, isLoading } = useCollection<Transaction>(transactionsCollection);
+
   const StatusBadge = ({ status }: { status: Transaction['status'] }) => {
     const variant = getStatusBadgeVariant(status);
     return (
@@ -134,67 +138,71 @@ export default function ReportsPage() {
           <CardDescription>A preview of all recorded transactions.</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Mobile View */}
-          <div className="grid gap-4 md:hidden">
-            {transactions.map(transaction => (
-              <Card key={transaction.id} className="w-full">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg font-code">{transaction.id}</CardTitle>
-                      <CardDescription>{transaction.studentName} ({transaction.studentRoll})</CardDescription>
-                    </div>
-                     <StatusBadge status={transaction.status} />
-                  </div>
-                </CardHeader>
-                <CardContent className="grid gap-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Event</span>
-                    <span>{transaction.eventName}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Amount</span>
-                    <span className="font-semibold">₹{transaction.amount.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Date</span>
-                    <span>{new Date(transaction.date).toLocaleDateString()}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+            {isLoading ? <p>Loading transactions...</p> : (
+            <>
+                {/* Mobile View */}
+                <div className="grid gap-4 md:hidden">
+                    {transactions?.map(transaction => (
+                    <Card key={transaction.id} className="w-full">
+                        <CardHeader>
+                        <div className="flex justify-between items-start">
+                            <div>
+                            <CardTitle className="text-lg font-code">{transaction.id}</CardTitle>
+                            <CardDescription>{transaction.studentName} ({transaction.studentRoll})</CardDescription>
+                            </div>
+                            <StatusBadge status={transaction.status} />
+                        </div>
+                        </CardHeader>
+                        <CardContent className="grid gap-4">
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Event</span>
+                            <span>{transaction.eventName}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Amount</span>
+                            <span className="font-semibold">₹{transaction.amount.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Date</span>
+                            <span>{new Date(transaction.paymentDate instanceof Timestamp ? transaction.paymentDate.toDate() : transaction.paymentDate).toLocaleDateString()}</span>
+                        </div>
+                        </CardContent>
+                    </Card>
+                    ))}
+                </div>
 
-          {/* Desktop View */}
-          <Table className="hidden md:table">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Transaction ID</TableHead>
-                <TableHead>Student</TableHead>
-                <TableHead>Event</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transactions.map(transaction => (
-                 <TableRow key={transaction.id}>
-                   <TableCell className="font-code">{transaction.id}</TableCell>
-                   <TableCell>
-                     <div>{transaction.studentName}</div>
-                     <div className="text-xs text-muted-foreground">{transaction.studentRoll}</div>
-                   </TableCell>
-                   <TableCell>{transaction.eventName}</TableCell>
-                   <TableCell>₹{transaction.amount.toLocaleString()}</TableCell>
-                   <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
-                   <TableCell>
-                     <StatusBadge status={transaction.status} />
-                   </TableCell>
-                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                {/* Desktop View */}
+                <Table className="hidden md:table">
+                    <TableHeader>
+                    <TableRow>
+                        <TableHead>Transaction ID</TableHead>
+                        <TableHead>Student</TableHead>
+                        <TableHead>Event</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                    </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                    {transactions?.map(transaction => (
+                        <TableRow key={transaction.id}>
+                        <TableCell className="font-code">{transaction.id}</TableCell>
+                        <TableCell>
+                            <div>{transaction.studentName}</div>
+                            <div className="text-xs text-muted-foreground">{transaction.studentRoll}</div>
+                        </TableCell>
+                        <TableCell>{transaction.eventName}</TableCell>
+                        <TableCell>₹{transaction.amount.toLocaleString()}</TableCell>
+                        <TableCell>{new Date(transaction.paymentDate instanceof Timestamp ? transaction.paymentDate.toDate() : transaction.paymentDate).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                            <StatusBadge status={transaction.status} />
+                        </TableCell>
+                        </TableRow>
+                    ))}
+                    </TableBody>
+                </Table>
+            </>
+            )}
         </CardContent>
       </Card>
     </div>

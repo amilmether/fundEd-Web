@@ -1,19 +1,28 @@
-export type Transaction = {
+import { Timestamp } from "firebase/firestore";
+
+export type Payment = {
   id: string;
-  studentName: string;
-  studentRoll: string;
-  eventName: string;
+  studentId: string;
+  studentName: string; // denormalized for easier display
+  studentRoll: string; // denormalized
+  eventId: string;
+  eventName: string; // denormalized
   amount: number;
-  date: string;
+  paymentDate: Timestamp | Date | string;
+  transactionId: string;
   status: 'Paid' | 'Pending' | 'Failed' | 'Verification Pending';
   paymentMethod: 'Razorpay' | 'QR Scan' | 'Cash' | 'N/A';
+  screenshotUrl?: string;
 };
+
+// Re-exporting Payment as Transaction for backwards compatibility in some components
+export type Transaction = Payment;
 
 export type Event = {
   id: string;
   name: string;
   description: string;
-  deadline: string;
+  deadline: Timestamp | Date | string;
   cost: number;
   totalCollected: number;
   totalPending: number;
@@ -42,5 +51,5 @@ export type PrintDistribution = {
   studentName: string;
   studentRoll: string;
   eventId: string;
-  distributedAt: string;
+  distributedAt: Timestamp | Date | string;
 };

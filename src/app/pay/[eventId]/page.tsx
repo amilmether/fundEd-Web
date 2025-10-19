@@ -1,8 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
-import { events, students } from '@/lib/data';
-import type { Student } from '@/lib/types';
+import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -47,17 +45,51 @@ import {
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import type { Event, Student, Payment } from '@/lib/types';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 
 export default function PaymentPage() {
   const { eventId } = useParams();
-  const event = events.find((e) => e.id === eventId);
+  const firestore = useFirestore();
+  const router = useRouter();
+
   const [selectedMethod, setSelectedMethod] = useState('');
   const [open, setOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [searchValue, setSearchValue] = useState('');
   const [showQrDialog, setShowQrDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+
   const { toast } = useToast();
+
+  const eventRef = useMemoFirebase(() => firestore && eventId ? doc(firestore, 'events', eventId as string) : null, [firestore, eventId]);
+  const { data: event, isLoading: isEventLoading } = useDoc<Event>(eventRef);
+
+  const studentsRef = useMemoFirebase(() => firestore ? collection(firestore, 'students') : null, [firestore]);
+  const { data: students, isLoading: areStudentsLoading } = useCollection<Student>(studentsRef);
+
+  const filteredStudents = useMemo(() => {
+    if (!students) return [];
+    if (!searchValue) return students;
+    return students.filter(
+      (student) =>
+        student.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+        student.rollNo.toLowerCase().includes(searchValue.toLowerCase())
+    );
+  }, [searchValue, students]);
+
+
+  if (isEventLoading || areStudentsLoading) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   if (!event) {
     return (
@@ -73,17 +105,6 @@ export default function PaymentPage() {
       </div>
     );
   }
-
-  const showScreenshotUpload = selectedMethod === 'qr' || selectedMethod === 'cash';
-
-  const filteredStudents = useMemo(() => {
-    if (!searchValue) return students;
-    return students.filter(
-      (student) =>
-        student.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-        student.rollNo.toLowerCase().includes(searchValue.toLowerCase())
-    );
-  }, [searchValue]);
 
   const getButtonText = () => {
     if (!selectedMethod) return `Pay ₹${event.cost.toLocaleString()}`;
@@ -111,20 +132,74 @@ export default function PaymentPage() {
         })
       }
     } else if (selectedMethod === 'razorpay') {
-      // Logic for Razorpay
+      // In a real app, this would redirect to Razorpay
       toast({ title: "Redirecting to Razorpay..."});
+      
+      const paymentData: Omit<Payment, 'id' | 'paymentDate'> = {
+        studentId: selectedStudent!.id,
+        eventId: event.id,
+        amount: event.cost,
+        transactionId: `RAZORPAY_${Date.now()}`,
+        paymentStatus: 'Paid',
+        eventName: event.name,
+        studentName: selectedStudent!.name,
+        studentRoll: selectedStudent!.rollNo,
+        paymentMethod: 'Razorpay'
+      };
+      
+      const newPayment = { ...paymentData, paymentDate: serverTimestamp() };
+      addDocumentNonBlocking(collection(firestore, 'payments'), newPayment);
+
       setShowSuccessDialog(true);
     } else if (selectedMethod === 'cash') {
-       // Logic for Cash
+       const paymentData: Omit<Payment, 'id' | 'paymentDate'> = {
+        studentId: selectedStudent!.id,
+        eventId: event.id,
+        amount: event.cost,
+        transactionId: `CASH_${Date.now()}`,
+        paymentStatus: 'Verification Pending',
+        eventName: event.name,
+        studentName: selectedStudent!.name,
+        studentRoll: selectedStudent!.rollNo,
+        paymentMethod: 'Cash'
+      };
+      
+      const newPayment = { ...paymentData, paymentDate: serverTimestamp() };
+      addDocumentNonBlocking(collection(firestore, 'payments'), newPayment);
+
        setShowSuccessDialog(true);
     }
   };
 
-  const handleSubmit = () => {
-    // This would typically involve uploading the file and submitting the form data
+  const handleSubmit = async () => {
+    if (!selectedStudent || !firestore) return;
+    // In a real app, upload screenshotFile to Firebase Storage
+    
+    const paymentData: Omit<Payment, 'id' | 'paymentDate'> = {
+      studentId: selectedStudent.id,
+      eventId: event.id,
+      amount: event.cost,
+      transactionId: `QR_${Date.now()}`,
+      paymentStatus: 'Verification Pending',
+      screenshotUrl: screenshotFile ? 'placeholder_url' : undefined,
+      eventName: event.name,
+      studentName: selectedStudent.name,
+      studentRoll: selectedStudent.rollNo,
+      paymentMethod: 'QR Scan'
+    };
+
+    const newPayment = { ...paymentData, paymentDate: serverTimestamp() };
+    await addDocumentNonBlocking(collection(firestore, 'payments'), newPayment);
+    
     setShowQrDialog(false);
     setShowSuccessDialog(true);
   }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setScreenshotFile(e.target.files[0]);
+    }
+  };
 
 
   return (
@@ -272,7 +347,7 @@ export default function PaymentPage() {
           <div className="grid gap-2">
             <Label htmlFor="screenshot">Upload Screenshot</Label>
             <div className="flex items-center gap-2">
-              <Input id="screenshot" type="file" className="flex-1" accept="image/*" />
+              <Input id="screenshot" type="file" className="flex-1" accept="image/*" onChange={handleFileChange} />
               <Button variant="outline" size="icon">
                 <Upload className="h-4 w-4" />
               </Button>
@@ -280,7 +355,7 @@ export default function PaymentPage() {
           </div>
           <AlertDialogFooter>
             <Button variant="outline" onClick={() => setShowQrDialog(false)}>Cancel</Button>
-            <Button onClick={handleSubmit}>Submit for Verification</Button>
+            <Button onClick={handleSubmit} disabled={!screenshotFile}>Submit for Verification</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

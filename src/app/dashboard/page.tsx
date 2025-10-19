@@ -21,7 +21,6 @@ import {
   Wallet,
   Activity,
 } from 'lucide-react';
-import { transactions, chartData } from '@/lib/data';
 import {
   ChartContainer,
   ChartTooltip,
@@ -30,14 +29,30 @@ import {
   ChartLegendContent,
 } from '@/components/ui/chart';
 import { Bar, BarChart as RechartsBarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where, limit } from 'firebase/firestore';
+import type { Transaction, Event } from '@/lib/types';
+import { chartData } from '@/lib/data'; // Keep using mock chart data for now
 
 export default function DashboardPage() {
+  const firestore = useFirestore();
+
+  const transactionsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'payments') : null, [firestore]);
+  const { data: transactions } = useCollection<Transaction>(transactionsCollection);
+
+  const eventsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'events') : null, [firestore]);
+  const { data: events } = useCollection<Event>(eventsCollection);
+
+  const recentTransactionsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'payments'), limit(5)) : null, [firestore]);
+  const { data: recentTransactions } = useCollection<Transaction>(recentTransactionsQuery);
+
+
   const totalCollected = transactions
-    .filter((t) => t.status === 'Paid')
-    .reduce((acc, t) => acc + t.amount, 0);
+    ?.filter((t) => t.status === 'Paid')
+    .reduce((acc, t) => acc + t.amount, 0) || 0;
   const totalPending = transactions
-    .filter((t) => t.status === 'Pending')
-    .reduce((acc, t) => acc + t.amount, 0);
+    ?.filter((t) => t.status === 'Pending' || t.status === 'Verification Pending')
+    .reduce((acc, t) => acc + t.amount, 0) || 0;
 
   const chartConfig = {
     collected: {
@@ -63,7 +78,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">₹{totalCollected.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              +20.1% from last month
+              Across all events
             </p>
           </CardContent>
         </Card>
@@ -77,7 +92,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">₹{totalPending.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              +180.1% from last month
+              Awaiting payment or verification
             </p>
           </CardContent>
         </Card>
@@ -87,9 +102,9 @@ export default function DashboardPage() {
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
+            <div className="text-2xl font-bold">{events?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              1 finishing soon
+              Currently managed events
             </p>
           </CardContent>
         </Card>
@@ -99,9 +114,9 @@ export default function DashboardPage() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{transactions.length}</div>
+            <div className="text-2xl font-bold">+{transactions?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
-              +19% from last month
+              Total payments recorded
             </p>
           </CardContent>
         </Card>
@@ -147,7 +162,7 @@ export default function DashboardPage() {
           <CardContent>
              {/* Mobile View */}
             <div className="grid gap-4 md:hidden">
-              {transactions.slice(0, 5).map((transaction) => (
+              {recentTransactions?.map((transaction) => (
                 <div key={transaction.id} className="p-4 bg-muted/50 rounded-lg flex flex-col gap-2">
                   <div className="flex justify-between items-start">
                     <div>
@@ -173,7 +188,7 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.slice(0, 5).map((transaction) => (
+                {recentTransactions?.map((transaction) => (
                   <TableRow key={transaction.id}>
                     <TableCell>
                       <div className="font-medium">{transaction.studentName}</div>

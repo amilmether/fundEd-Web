@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Bell,
   FileText,
@@ -40,10 +40,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Logo } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { transactions } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
-import type { Transaction } from '@/lib/types';
-import { events } from '@/lib/data';
+import type { Transaction, Event } from '@/lib/types';
+import { useAuth, useCollection, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import { useFirestore } from '@/firebase/provider';
+import { useEffect } from 'react';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -100,12 +102,10 @@ function MobileNav() {
 }
 
 const NotificationItem = ({ transaction }: { transaction: Transaction }) => {
-    const event = events.find(e => e.name === transaction.eventName);
-    if (!event) return null;
-
+    
     return (
         <DropdownMenuItem asChild>
-            <Link href={`/dashboard/events/${event.id}/payments`}>
+            <Link href={`/dashboard/events/${transaction.eventId}/payments`}>
                 <div className="flex flex-col">
                     <p className="text-sm font-medium">{transaction.studentName}</p>
                     <p className="text-xs text-muted-foreground">{transaction.eventName} - ₹{transaction.amount}</p>
@@ -123,7 +123,31 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const pendingTransactions = transactions.filter(t => t.status === 'Verification Pending');
+  const router = useRouter();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  const pendingTransactionsQuery = useMemoFirebase(() =>
+    firestore ? query(collection(firestore, 'payments'), where('status', '==', 'Verification Pending')) : null,
+  [firestore]);
+
+  const { data: pendingTransactions } = useCollection<Transaction>(pendingTransactionsQuery);
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  const handleLogout = () => {
+    auth.signOut();
+  }
+
+  if (isUserLoading) {
+    return <div className="flex min-h-screen items-center justify-center">Loading...</div>
+  }
+
 
   return (
     <SidebarProvider>
@@ -168,7 +192,7 @@ export default function DashboardLayout({
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="relative rounded-full">
                         <Bell className="h-5 w-5" />
-                        {pendingTransactions.length > 0 && (
+                        {pendingTransactions && pendingTransactions.length > 0 && (
                             <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
                                 {pendingTransactions.length}
                             </Badge>
@@ -179,7 +203,7 @@ export default function DashboardLayout({
                 <DropdownMenuContent align="end" className="w-80">
                     <DropdownMenuLabel>Pending Verifications</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {pendingTransactions.length > 0 ? (
+                    {pendingTransactions && pendingTransactions.length > 0 ? (
                         <DropdownMenuGroup>
                             {pendingTransactions.map(t => (
                                 <NotificationItem key={t.id} transaction={t} />
@@ -197,17 +221,17 @@ export default function DashboardLayout({
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src="https://picsum.photos/seed/1/100/100" alt="@shadcn" />
-                    <AvatarFallback>SA</AvatarFallback>
+                    <AvatarImage src={user?.photoURL ?? "https://picsum.photos/seed/1/100/100"} alt={user?.displayName ?? ""} />
+                    <AvatarFallback>{user?.email?.[0].toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Super Admin</p>
+                    <p className="text-sm font-medium leading-none">{user?.displayName ?? "User"}</p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      admin@fundedhq.com
+                      {user?.email}
                     </p>
                   </div>
                 </DropdownMenuLabel>
@@ -219,7 +243,7 @@ export default function DashboardLayout({
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
