@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -40,8 +41,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { Event, QrCode } from '@/lib/types';
-import { useState } from 'react';
+import type { Event, QrCode, Payment } from '@/lib/types';
+import { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -67,6 +68,9 @@ export default function EventsPage() {
   const qrCodesCollection = useMemoFirebase(() => firestore ? collection(firestore, `classes/${classId}/qrcodes`) : null, [firestore, classId]);
   const { data: qrCodes, isLoading: areQrCodesLoading } = useCollection<QrCode>(qrCodesCollection);
 
+  const paymentsCollection = useMemoFirebase(() => firestore ? collection(firestore, `classes/${classId}/payments`) : null, [firestore, classId]);
+  const { data: payments } = useCollection<Payment>(paymentsCollection);
+
 
   const [open, setOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -74,6 +78,13 @@ export default function EventsPage() {
   const [paymentOptions, setPaymentOptions] = useState<('Razorpay' | 'QR' | 'Cash')[]>([]);
   const [selectedQrCode, setSelectedQrCode] = useState<string | undefined>(undefined);
   const [category, setCategory] = useState<Event['category']>('Normal');
+
+  const getCollectedAmountForEvent = (eventId: string) => {
+    if (!payments) return 0;
+    return payments
+      .filter(p => p.eventId === eventId && p.status === 'Paid')
+      .reduce((acc, p) => acc + p.amount, 0);
+  }
 
 
   const handleCopyLink = (eventId: string) => {
@@ -133,7 +144,7 @@ export default function EventsPage() {
       const eventRef = doc(firestore, `classes/${classId}/events`, selectedEvent.id);
       const dataToUpdate = {
         ...eventData,
-        // We preserve the collected/pending amounts
+        // We preserve the collected/pending amounts as they are not edited here
         totalCollected: selectedEvent.totalCollected,
         totalPending: selectedEvent.totalPending
       };
@@ -366,13 +377,7 @@ export default function EventsPage() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Collected</span>
                       <span className="text-green-600 dark:text-green-400">
-                        ₹{event.totalCollected.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Pending</span>
-                      <span className="text-orange-600 dark:text-orange-400">
-                        ₹{event.totalPending.toLocaleString()}
+                        ₹{getCollectedAmountForEvent(event.id).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
@@ -391,7 +396,6 @@ export default function EventsPage() {
                   <TableHead>Event</TableHead>
                   <TableHead className="hidden sm:table-cell">Cost</TableHead>
                   <TableHead className="hidden md:table-cell">Collected</TableHead>
-                  <TableHead className="hidden md:table-cell">Pending</TableHead>
                   <TableHead>Deadline</TableHead>
                   <TableHead>
                     <span className="sr-only">Actions</span>
@@ -409,10 +413,7 @@ export default function EventsPage() {
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">₹{event.cost.toLocaleString()}</TableCell>
                     <TableCell className="text-green-600 dark:text-green-400 hidden md:table-cell">
-                      ₹{event.totalCollected.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-orange-600 dark:text-orange-400 hidden md:table-cell">
-                      ₹{event.totalPending.toLocaleString()}
+                      ₹{getCollectedAmountForEvent(event.id).toLocaleString()}
                     </TableCell>
                     <TableCell>{new Date(event.deadline instanceof Timestamp ? event.deadline.toDate() : event.deadline).toLocaleDateString()}</TableCell>
                     <TableCell>
@@ -428,3 +429,5 @@ export default function EventsPage() {
     </Card>
   );
 }
+
+    
