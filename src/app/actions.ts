@@ -1,13 +1,19 @@
 'use server';
 
 import { sendPrintDistributionEmail as sendPrintDistributionEmailFlow } from '@/ai/flows/send-email';
-import type { SendEmailInput, SendEmailOutput } from '@/lib/types';
+import { sendPaymentConfirmationEmail as sendPaymentConfirmationEmailFlow, sendPaymentApprovedEmail as sendPaymentApprovedEmailFlow } from '@/ai/flows/payment-emails';
+import type { SendEmailInput, SendEmailOutput, PaymentConfirmationEmailInput, PaymentApprovedEmailInput } from '@/lib/types';
 
-/**
- * Server action to trigger the print distribution email flow.
- * @param input The data required to send the email.
- * @returns The result of the flow execution.
- */
+
 export async function sendPrintDistributionEmail(input: SendEmailInput): Promise<SendEmailOutput> {
   return await sendPrintDistributionEmailFlow(input);
+}
+
+
+export async function sendPaymentConfirmationEmail(input: PaymentConfirmationEmailInput): Promise<SendEmailOutput> {
+    return await sendPaymentConfirmationEmailFlow(input);
+}
+
+export async function sendPaymentApprovedEmail(input: PaymentApprovedEmailInput): Promise<SendEmailOutput> {
+    return await sendPaymentApprovedEmailFlow(input);
 }

@@ -49,6 +49,7 @@ import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase
 import { collection, doc, serverTimestamp, Timestamp, query, where } from 'firebase/firestore';
 import type { Event, Student, Payment } from '@/lib/types';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { sendPaymentConfirmationEmail } from '@/app/actions';
 
 
 export default function PaymentPage() {
@@ -137,7 +138,7 @@ export default function PaymentPage() {
     }
   };
 
-  const handlePaymentSubmission = (paymentMethod: Payment['paymentMethod'], status: Payment['status'], transactionIdPrefix: string) => {
+  const handlePaymentSubmission = async (paymentMethod: Payment['paymentMethod'], status: Payment['status'], transactionIdPrefix: string) => {
     if (!selectedStudent || !classId || !firestore) return;
     setIsSubmitting(true);
     
@@ -155,6 +156,14 @@ export default function PaymentPage() {
     
     const newPayment = { ...paymentData, paymentDate: serverTimestamp() };
     addDocumentNonBlocking(collection(firestore, `classes/${classId}/payments`), newPayment);
+
+    await sendPaymentConfirmationEmail({
+        studentName: selectedStudent.name,
+        studentEmail: selectedStudent.email,
+        eventName: event.name,
+        amount: event.cost,
+        paymentMethod,
+    });
 
     setShowSuccessDialog(true);
     setIsSubmitting(false);
@@ -183,10 +192,8 @@ export default function PaymentPage() {
 
   const handleSubmitQrPayment = async () => {
     if (isSubmitting) return;
-
-    setIsSubmitting(true);
-    handlePaymentSubmission('QR Scan', 'Verification Pending', 'QR');
     setShowQrDialog(false);
+    await handlePaymentSubmission('QR Scan', 'Verification Pending', 'QR');
     // Success dialog is shown by handlePaymentSubmission
   }
 
@@ -364,5 +371,3 @@ export default function PaymentPage() {
     </>
   );
 }
-
-    

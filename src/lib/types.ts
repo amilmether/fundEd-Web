@@ -69,3 +69,20 @@ export const SendEmailOutputSchema = z.object({
 });
 
 export type SendEmailOutput = z.infer<typeof SendEmailOutputSchema>;
+
+export const PaymentConfirmationEmailInputSchema = z.object({
+  studentName: z.string(),
+  studentEmail: z.string().email(),
+  eventName: z.string(),
+  amount: z.number(),
+  paymentMethod: z.string(),
+});
+export type PaymentConfirmationEmailInput = z.infer<typeof PaymentConfirmationEmailInputSchema>;
+
+export const PaymentApprovedEmailInputSchema = z.object({
+  studentName: z.string(),
+  studentEmail: z.string().email(),
+  eventName: z.string(),
+  amount: z.number(),
+});
+export type PaymentApprovedEmailInput = z.infer<typeof PaymentApprovedEmailInputSchema>;

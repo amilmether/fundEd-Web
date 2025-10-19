@@ -20,11 +20,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Check, X } from 'lucide-react';
-import type { Transaction, Event } from '@/lib/types';
+import type { Transaction, Event, Student } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, where, Timestamp } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { sendPaymentApprovedEmail } from '@/app/actions';
 
 
 const getStatusBadgeVariant = (status: Transaction['status']) => {
@@ -55,16 +56,35 @@ export default function EventPaymentsPage() {
   
   const paymentsQuery = useMemoFirebase(() => firestore && eventId ? query(collection(firestore, `classes/${classId}/payments`), where('eventId', '==', eventId)) : null, [firestore, eventId]);
   const { data: transactions, isLoading: areTransactionsLoading } = useCollection<Transaction>(paymentsQuery);
+
+  const studentsRef = useMemoFirebase(() => firestore ? collection(firestore, `classes/${classId}/students`) : null, [firestore]);
+  const { data: students } = useCollection<Student>(studentsRef);
   
-  const handlePaymentAction = (transactionId: string, newStatus: 'Paid' | 'Failed') => {
+  const handlePaymentAction = async (transaction: Transaction, newStatus: 'Paid' | 'Failed') => {
     if (!firestore) return;
-    const paymentRef = doc(firestore, `classes/${classId}/payments`, transactionId);
+    const paymentRef = doc(firestore, `classes/${classId}/payments`, transaction.id);
     updateDocumentNonBlocking(paymentRef, { status: newStatus });
 
     toast({
         title: "Payment Status Updated",
-        description: `Transaction ${transactionId} has been marked as ${newStatus}.`
+        description: `Transaction ${transaction.id} has been marked as ${newStatus}.`
     })
+
+    if (newStatus === 'Paid' && event) {
+        const student = students?.find(s => s.id === transaction.studentId);
+        if (student) {
+            await sendPaymentApprovedEmail({
+                studentName: student.name,
+                studentEmail: student.email,
+                eventName: event.name,
+                amount: transaction.amount,
+            });
+             toast({
+                title: "Approval Email Sent",
+                description: `An email has been sent to ${student.name} confirming their payment.`,
+            });
+        }
+    }
   };
 
   const formatDate = (date: Date | Timestamp | string) => {
@@ -119,7 +139,7 @@ export default function EventPaymentsPage() {
             variant="outline" 
             size="icon" 
             className="h-8 w-8 border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
-            onClick={() => handlePaymentAction(transaction.id, 'Paid')}>
+            onClick={() => handlePaymentAction(transaction, 'Paid')}>
           <Check className="h-4 w-4" />
           <span className="sr-only">Confirm</span>
         </Button>
@@ -127,7 +147,7 @@ export default function EventPaymentsPage() {
             variant="outline" 
             size="icon" 
             className="h-8 w-8 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-            onClick={() => handlePaymentAction(transaction.id, 'Failed')}>
+            onClick={() => handlePaymentAction(transaction, 'Failed')}>
           <X className="h-4 w-4" />
           <span className="sr-only">Reject</span>
         </Button>
