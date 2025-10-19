@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -56,16 +57,16 @@ export default function EventsPage() {
       description: 'Payment link has been copied to your clipboard.',
     });
   };
-  
+
   const handleEdit = (event: Event) => {
     setSelectedEvent(event);
     setOpen(true);
   };
-  
+
   const handleCreateNew = () => {
     setSelectedEvent(null);
     setOpen(true);
-  }
+  };
 
   const EventActions = ({ event }: { event: Event }) => (
     <DropdownMenu>
@@ -82,9 +83,11 @@ export default function EventsPage() {
           <Pencil className="mr-2 h-4 w-4" />
           Edit
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Eye className="mr-2 h-4 w-4" />
-          View Payments
+        <DropdownMenuItem asChild>
+          <Link href={`/dashboard/events/${event.id}/payments`}>
+            <Eye className="mr-2 h-4 w-4" />
+            View Payments
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleCopyLink(event.id)}>
           <Copy className="mr-2 h-4 w-4" />
@@ -105,7 +108,7 @@ export default function EventsPage() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-             <Button className="w-full sm:w-auto" onClick={handleCreateNew}>
+            <Button className="w-full sm:w-auto" onClick={handleCreateNew}>
               <PlusCircle className="mr-2 h-4 w-4" />
               <span className="whitespace-nowrap">Create Event</span>
             </Button>
@@ -114,7 +117,9 @@ export default function EventsPage() {
             <DialogHeader>
               <DialogTitle>{selectedEvent ? 'Edit Event' : 'Create New Event'}</DialogTitle>
               <DialogDescription>
-                {selectedEvent ? 'Update the details for your event.' : 'Fill in the details below to create a new event for fund collection.'}
+                {selectedEvent
+                  ? 'Update the details for your event.'
+                  : 'Fill in the details below to create a new event for fund collection.'}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -122,25 +127,48 @@ export default function EventsPage() {
                 <Label htmlFor="name" className="text-right">
                   Name
                 </Label>
-                <Input id="name" defaultValue={selectedEvent?.name} placeholder="e.g., Annual Tech Fest" className="col-span-3" />
+                <Input
+                  id="name"
+                  defaultValue={selectedEvent?.name}
+                  placeholder="e.g., Annual Tech Fest"
+                  className="col-span-3"
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="description" className="text-right">
                   Description
                 </Label>
-                <Textarea id="description" defaultValue={selectedEvent?.description} placeholder="A short description of the event" className="col-span-3" />
+                <Textarea
+                  id="description"
+                  defaultValue={selectedEvent?.description}
+                  placeholder="A short description of the event"
+                  className="col-span-3"
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="cost" className="text-right">
                   Cost (₹)
                 </Label>
-                <Input id="cost" type="number" defaultValue={selectedEvent?.cost} placeholder="e.g., 500" className="col-span-3" />
+                <Input
+                  id="cost"
+                  type="number"
+                  defaultValue={selectedEvent?.cost}
+                  placeholder="e.g., 500"
+                  className="col-span-3"
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="deadline" className="text-right">
                   Deadline
                 </Label>
-                <Input id="deadline" type="date" defaultValue={selectedEvent ? new Date(selectedEvent.deadline).toISOString().split('T')[0] : ''} className="col-span-3" />
+                <Input
+                  id="deadline"
+                  type="date"
+                  defaultValue={
+                    selectedEvent ? new Date(selectedEvent.deadline).toISOString().split('T')[0] : ''
+                  }
+                  className="col-span-3"
+                />
               </div>
             </div>
             <DialogFooter>
@@ -149,7 +177,9 @@ export default function EventsPage() {
                   Cancel
                 </Button>
               </DialogClose>
-              <Button type="submit" onClick={() => setOpen(false)}>{selectedEvent ? 'Save Changes' : 'Create Event'}</Button>
+              <Button type="submit" onClick={() => setOpen(false)}>
+                {selectedEvent ? 'Save Changes' : 'Create Event'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -169,19 +199,23 @@ export default function EventsPage() {
                 </div>
               </CardHeader>
               <CardContent className="grid gap-4">
-                 <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Cost</span>
                   <span>₹{event.cost.toLocaleString()}</span>
                 </div>
-                 <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Collected</span>
-                  <span className="text-green-600 dark:text-green-400">₹{event.totalCollected.toLocaleString()}</span>
+                  <span className="text-green-600 dark:text-green-400">
+                    ₹{event.totalCollected.toLocaleString()}
+                  </span>
                 </div>
-                 <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Pending</span>
-                  <span className="text-orange-600 dark:text-orange-400">₹{event.totalPending.toLocaleString()}</span>
+                  <span className="text-orange-600 dark:text-orange-400">
+                    ₹{event.totalPending.toLocaleString()}
+                  </span>
                 </div>
-                 <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Deadline</span>
                   <span>{new Date(event.deadline).toLocaleDateString()}</span>
                 </div>
@@ -189,7 +223,7 @@ export default function EventsPage() {
             </Card>
           ))}
         </div>
-        
+
         {/* Desktop View */}
         <Table className="hidden md:table">
           <TableHeader>
@@ -209,7 +243,9 @@ export default function EventsPage() {
               <TableRow key={event.id}>
                 <TableCell>
                   <div className="font-bold">{event.name}</div>
-                  <div className="text-sm text-muted-foreground hidden sm:inline">{event.description}</div>
+                  <div className="text-sm text-muted-foreground hidden sm:inline">
+                    {event.description}
+                  </div>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">₹{event.cost.toLocaleString()}</TableCell>
                 <TableCell className="text-green-600 dark:text-green-400 hidden md:table-cell">
