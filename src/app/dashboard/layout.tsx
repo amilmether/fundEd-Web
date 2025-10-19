@@ -10,7 +10,6 @@ import {
   Menu,
   Printer,
   Settings,
-  ShieldCheck,
   Users,
   Wallet,
   ArrowRight,
@@ -53,7 +52,6 @@ const navItems = [
   { href: '/dashboard/prints', icon: Printer, label: 'Prints' },
   { href: '/dashboard/students', icon: Users, label: 'Students' },
   { href: '/dashboard/reports', icon: FileText, label: 'Reports' },
-  { href: '/dashboard/fraud-detection', icon: ShieldCheck, label: 'Fraud Detection' },
 ];
 
 function MainNav() {
