@@ -25,6 +25,16 @@ export const SendEmailOutputSchema = z.object({
 
 export type SendEmailOutput = z.infer<typeof SendEmailOutputSchema>;
 
+/**
+ * Server action to trigger the print distribution email flow.
+ * @param input The data required to send the email.
+ * @returns The result of the flow execution.
+ */
+export async function sendPrintDistributionEmail(input: SendEmailInput): Promise<SendEmailOutput> {
+  return await sendPrintDistributionEmailFlow(input);
+}
+
+
 const emailPrompt = ai.definePrompt({
     name: 'emailPrompt',
     input: { schema: SendEmailInputSchema },
@@ -46,7 +56,7 @@ const emailPrompt = ai.definePrompt({
 });
 
 
-export const sendPrintDistributionEmailFlow = ai.defineFlow(
+const sendPrintDistributionEmailFlow = ai.defineFlow(
   {
     name: 'sendPrintDistributionEmailFlow',
     inputSchema: SendEmailInputSchema,

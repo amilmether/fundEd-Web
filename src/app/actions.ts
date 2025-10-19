@@ -1,6 +1,6 @@
 'use server';
 
-import { sendPrintDistributionEmailFlow, SendEmailInput, SendEmailOutput } from '@/ai/flows/send-email';
+import { sendPrintDistributionEmail as sendPrintDistributionEmailFlow, SendEmailInput, SendEmailOutput } from '@/ai/flows/send-email';
 
 /**
  * Server action to trigger the print distribution email flow.
