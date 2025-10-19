@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -23,8 +24,34 @@ import { cn } from '@/lib/utils';
 import { transactions } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import type { Transaction } from '@/lib/types';
+
+const getStatusBadgeVariant = (status: Transaction['status']) => {
+  switch (status) {
+    case 'Paid':
+      return 'paid';
+    case 'Pending':
+      return 'pending';
+    case 'Failed':
+      return 'failed';
+    case 'Verification Pending':
+      return 'verification';
+    default:
+      return 'default';
+  }
+};
+
 
 export default function ReportsPage() {
+  const StatusBadge = ({ status }: { status: Transaction['status'] }) => {
+    const variant = getStatusBadgeVariant(status);
+    return (
+      <Badge variant={variant as any}>
+        {status}
+      </Badge>
+    );
+  };
+  
   return (
     <div className="grid gap-8">
       <Card>
@@ -117,15 +144,7 @@ export default function ReportsPage() {
                       <CardTitle className="text-lg font-code">{transaction.id}</CardTitle>
                       <CardDescription>{transaction.studentName} ({transaction.studentRoll})</CardDescription>
                     </div>
-                     <Badge variant={transaction.status === 'Paid' ? 'default' : transaction.status === 'Pending' ? 'secondary' : 'destructive'}
-                       className={cn(
-                         'whitespace-nowrap',
-                         transaction.status === 'Paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 
-                         transaction.status === 'Pending' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300' : 
-                         'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
-                       )}>
-                       {transaction.status}
-                     </Badge>
+                     <StatusBadge status={transaction.status} />
                   </div>
                 </CardHeader>
                 <CardContent className="grid gap-4">
@@ -153,8 +172,8 @@ export default function ReportsPage() {
                 <TableHead>Transaction ID</TableHead>
                 <TableHead>Student</TableHead>
                 <TableHead>Event</TableHead>
-                <TableHead className="hidden sm:table-cell">Amount</TableHead>
-                <TableHead className="hidden sm:table-cell">Date</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Date</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -167,18 +186,10 @@ export default function ReportsPage() {
                      <div className="text-xs text-muted-foreground">{transaction.studentRoll}</div>
                    </TableCell>
                    <TableCell>{transaction.eventName}</TableCell>
-                   <TableCell className="hidden sm:table-cell">₹{transaction.amount.toLocaleString()}</TableCell>
-                   <TableCell className="hidden sm:table-cell">{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                   <TableCell>₹{transaction.amount.toLocaleString()}</TableCell>
+                   <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
                    <TableCell>
-                     <Badge variant={transaction.status === 'Paid' ? 'default' : transaction.status === 'Pending' ? 'secondary' : 'destructive'}
-                       className={cn(
-                        'whitespace-nowrap border',
-                        transaction.status === 'Paid' ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800' : 
-                        transaction.status === 'Pending' ? 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-800' : 
-                        'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800'
-                       )}>
-                       {transaction.status}
-                     </Badge>
+                     <StatusBadge status={transaction.status} />
                    </TableCell>
                  </TableRow>
               ))}

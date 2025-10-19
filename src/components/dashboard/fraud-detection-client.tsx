@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -25,10 +26,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, ShieldAlert, ShieldCheck, Upload } from 'lucide-react';
+import { Loader2, ShieldAlert, ShieldCheck } from 'lucide-react';
 
 const formSchema = z.object({
   paymentData: z.string().min(1, 'Payment data is required.'),
@@ -182,7 +182,7 @@ export function FraudDetectionClient() {
       <div className="space-y-4">
         <h3 className="font-headline text-2xl font-semibold">Analysis Result</h3>
         {isLoading && (
-           <div className="flex items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
+           <div className="flex items-center justify-center rounded-lg border-2 border-dashed p-12 text-center h-full">
              <div className="flex flex-col items-center gap-2 text-muted-foreground">
                <Loader2 className="h-10 w-10 animate-spin text-primary" />
                <p className="font-semibold">AI is analyzing the transaction...</p>
@@ -200,7 +200,7 @@ export function FraudDetectionClient() {
         )}
         
         {!isLoading && !result && !error && (
-            <div className="flex items-center justify-center rounded-lg border-2 border-dashed p-12 text-center">
+            <div className="flex items-center justify-center rounded-lg border-2 border-dashed p-12 text-center h-full">
                 <p className="text-muted-foreground">Analysis results will appear here.</p>
             </div>
         )}
