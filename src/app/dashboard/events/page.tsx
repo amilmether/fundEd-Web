@@ -19,7 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, PlusCircle, Copy, Pencil, Eye, Upload } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Copy, Pencil, Eye, Upload, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,8 +54,9 @@ import {
 } from '@/components/ui/select';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Timestamp } from 'firebase/firestore';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 export default function EventsPage() {
   const firestore = useFirestore();
@@ -78,6 +79,10 @@ export default function EventsPage() {
   const [paymentOptions, setPaymentOptions] = useState<('Razorpay' | 'QR' | 'Cash')[]>([]);
   const [selectedQrCode, setSelectedQrCode] = useState<string | undefined>(undefined);
   const [category, setCategory] = useState<Event['category']>('Normal');
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
 
   const getCollectedAmountForEvent = (eventId: string) => {
     if (!payments) return 0;
@@ -164,6 +169,20 @@ export default function EventsPage() {
     setOpen(false);
   }
 
+  const openDeleteDialog = (event: Event) => {
+    setEventToDelete(event);
+    setDeleteDialogOpen(true);
+  }
+
+  const handleDeleteEvent = () => {
+    if (!firestore || !eventToDelete) return;
+    const eventRef = doc(firestore, `classes/${classId}/events`, eventToDelete.id);
+    deleteDocumentNonBlocking(eventRef);
+    toast({ title: 'Event Deleted', description: `${eventToDelete.name} has been removed.` });
+    setDeleteDialogOpen(false);
+    setEventToDelete(null);
+    setDeleteConfirmation('');
+  }
 
   const selectedQrCodeData = qrCodes?.find(qr => qr.url === selectedQrCode);
 
@@ -192,11 +211,17 @@ export default function EventsPage() {
           <Copy className="mr-2 h-4 w-4" />
           Copy Payment Link
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(event)}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1">
@@ -427,7 +452,36 @@ export default function EventsPage() {
         )}
       </CardContent>
     </Card>
+    
+    <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete the
+            event <span className="font-semibold text-foreground">{eventToDelete?.name}</span> and all associated payments. 
+            To confirm, please type <strong className="text-foreground">delete</strong> below.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Input
+            value={deleteConfirmation}
+            onChange={(e) => setDeleteConfirmation(e.target.value)}
+            placeholder="delete"
+            className="my-2"
+          />
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setDeleteConfirmation('')}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteEvent}
+            disabled={deleteConfirmation !== 'delete'}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Delete Event
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    </>
   );
 }
-
-    
