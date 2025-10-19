@@ -32,6 +32,8 @@ import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebas
 import { collection, query, limit, orderBy } from 'firebase/firestore';
 import type { Transaction, Event } from '@/lib/types';
 import { chartData } from '@/lib/data'; // Keep using mock chart data for now
+import { useMemo } from 'react';
+import { BrandedLoader } from '@/components/ui/branded-loader';
 
 export default function DashboardPage() {
   const firestore = useFirestore();
@@ -40,18 +42,18 @@ export default function DashboardPage() {
   const classId = 'class-1';
 
   const transactionsCollection = useMemoFirebase(() => (firestore && classId) ? collection(firestore, `classes/${classId}/payments`) : null, [firestore, classId]);
-  const { data: transactions } = useCollection<Transaction>(transactionsCollection);
+  const { data: transactions, isLoading: areTransactionsLoading } = useCollection<Transaction>(transactionsCollection);
 
   const eventsCollection = useMemoFirebase(() => (firestore && classId) ? collection(firestore, `classes/${classId}/events`) : null, [firestore, classId]);
-  const { data: events } = useCollection<Event>(eventsCollection);
+  const { data: events, isLoading: areEventsLoading } = useCollection<Event>(eventsCollection);
 
   const recentTransactionsQuery = useMemoFirebase(() => (firestore && classId) ? query(collection(firestore, `classes/${classId}/payments`), orderBy('paymentDate', 'desc'), limit(5)) : null, [firestore, classId]);
-  const { data: recentTransactions } = useCollection<Transaction>(recentTransactionsQuery);
+  const { data: recentTransactions, isLoading: areRecentTransactionsLoading } = useCollection<Transaction>(recentTransactionsQuery);
 
 
-  const totalCollected = transactions
+  const totalCollected = useMemo(() => transactions
     ?.filter((t) => t.status === 'Paid')
-    .reduce((acc, t) => acc + t.amount, 0) || 0;
+    .reduce((acc, t) => acc + t.amount, 0) || 0, [transactions]);
   
   const chartConfig = {
     collected: {
@@ -63,6 +65,10 @@ export default function DashboardPage() {
       color: 'hsl(var(--chart-2))',
     },
   };
+  
+  if (areTransactionsLoading || areEventsLoading || areRecentTransactionsLoading) {
+    return <BrandedLoader />;
+  }
 
   return (
     <>

@@ -58,6 +58,7 @@ export default function PaymentPage() {
   const searchParams = useSearchParams();
   const classId = searchParams.get('classId');
   const firestore = useFirestore();
+  const eventIdStr = eventId as string;
 
   const [selectedMethod, setSelectedMethod] = useState('');
   const [open, setOpen] = useState(false);
@@ -69,13 +70,13 @@ export default function PaymentPage() {
 
   const { toast } = useToast();
 
-  const eventRef = useMemoFirebase(() => firestore && classId && eventId ? doc(firestore, `classes/${classId}/events`, eventId as string) : null, [firestore, classId, eventId]);
+  const eventRef = useMemoFirebase(() => firestore && classId && eventIdStr ? doc(firestore, `classes/${classId}/events`, eventIdStr) : null, [firestore, classId, eventIdStr]);
   const { data: event, isLoading: isEventLoading } = useDoc<Event>(eventRef);
 
   const studentsRef = useMemoFirebase(() => firestore && classId ? collection(firestore, `classes/${classId}/students`) : null, [firestore, classId]);
   const { data: allStudents, isLoading: areStudentsLoading } = useCollection<Student>(studentsRef);
 
-  const paymentsQuery = useMemoFirebase(() => firestore && classId && eventId ? query(collection(firestore, `classes/${classId}/payments`), where('eventId', '==', eventId)) : null, [firestore, classId, eventId]);
+  const paymentsQuery = useMemoFirebase(() => firestore && classId && eventIdStr ? query(collection(firestore, `classes/${classId}/payments`), where('eventId', '==', eventIdStr)) : null, [firestore, classId, eventIdStr]);
   const { data: payments, isLoading: arePaymentsLoading } = useCollection<Payment>(paymentsQuery);
 
   const paidStudentIds = useMemo(() => {
@@ -99,7 +100,11 @@ export default function PaymentPage() {
   }, [searchValue, availableStudents]);
 
 
-  if (isEventLoading || areStudentsLoading || arePaymentsLoading || !event || !classId) {
+  if (isEventLoading || areStudentsLoading || arePaymentsLoading) {
+    return <BrandedLoader />;
+  }
+
+  if (!event || !classId) {
     return <BrandedLoader />;
   }
 

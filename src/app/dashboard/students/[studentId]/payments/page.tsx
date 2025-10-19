@@ -23,6 +23,7 @@ import { ArrowLeft } from 'lucide-react';
 import type { Transaction, Student } from '@/lib/types';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, where, Timestamp } from 'firebase/firestore';
+import { BrandedLoader } from '@/components/ui/branded-loader';
 
 
 const getStatusBadgeVariant = (status: Transaction['status']) => {
@@ -46,11 +47,12 @@ export default function StudentPaymentsPage() {
   const firestore = useFirestore();
   // TODO: Replace with dynamic classId from user profile
   const classId = 'class-1';
+  const studentIdStr = studentId as string;
 
-  const studentRef = useMemoFirebase(() => firestore && studentId ? doc(firestore, `classes/${classId}/students`, studentId as string) : null, [firestore, studentId]);
+  const studentRef = useMemoFirebase(() => firestore && studentIdStr ? doc(firestore, `classes/${classId}/students`, studentIdStr) : null, [firestore, studentIdStr, classId]);
   const { data: student, isLoading: isStudentLoading } = useDoc<Student>(studentRef);
   
-  const paymentsQuery = useMemoFirebase(() => firestore && studentId ? query(collection(firestore, `classes/${classId}/payments`), where('studentId', '==', studentId)) : null, [firestore, studentId]);
+  const paymentsQuery = useMemoFirebase(() => firestore && studentIdStr ? query(collection(firestore, `classes/${classId}/payments`), where('studentId', '==', studentIdStr)) : null, [firestore, studentIdStr, classId]);
   const { data: transactions, isLoading: areTransactionsLoading } = useCollection<Transaction>(paymentsQuery);
 
   const formatDate = (date: Date | Timestamp | string) => {
@@ -60,10 +62,8 @@ export default function StudentPaymentsPage() {
 
   if (isStudentLoading || areTransactionsLoading) {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Loading...</CardTitle>
-            </CardHeader>
+        <Card className="flex items-center justify-center py-12">
+            <BrandedLoader />
         </Card>
     )
   }

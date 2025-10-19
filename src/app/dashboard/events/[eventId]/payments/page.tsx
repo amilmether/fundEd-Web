@@ -26,6 +26,7 @@ import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase
 import { collection, doc, query, where, Timestamp } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { sendPaymentApprovedEmail } from '@/app/actions';
+import { BrandedLoader } from '@/components/ui/branded-loader';
 
 
 const getStatusBadgeVariant = (status: Transaction['status']) => {
@@ -50,15 +51,16 @@ export default function EventPaymentsPage() {
   const { toast } = useToast();
   // TODO: Replace with dynamic classId from user profile
   const classId = 'class-1';
+  const eventIdStr = eventId as string;
 
-  const eventRef = useMemoFirebase(() => firestore && eventId ? doc(firestore, `classes/${classId}/events`, eventId as string) : null, [firestore, eventId]);
+  const eventRef = useMemoFirebase(() => firestore && eventIdStr ? doc(firestore, `classes/${classId}/events`, eventIdStr) : null, [firestore, eventIdStr, classId]);
   const { data: event, isLoading: isEventLoading } = useDoc<Event>(eventRef);
   
-  const paymentsQuery = useMemoFirebase(() => firestore && eventId ? query(collection(firestore, `classes/${classId}/payments`), where('eventId', '==', eventId)) : null, [firestore, eventId]);
+  const paymentsQuery = useMemoFirebase(() => firestore && eventIdStr ? query(collection(firestore, `classes/${classId}/payments`), where('eventId', '==', eventIdStr)) : null, [firestore, eventIdStr, classId]);
   const { data: transactions, isLoading: areTransactionsLoading } = useCollection<Transaction>(paymentsQuery);
 
-  const studentsRef = useMemoFirebase(() => firestore ? collection(firestore, `classes/${classId}/students`) : null, [firestore]);
-  const { data: students } = useCollection<Student>(studentsRef);
+  const studentsRef = useMemoFirebase(() => firestore ? collection(firestore, `classes/${classId}/students`) : null, [firestore, classId]);
+  const { data: students, isLoading: areStudentsLoading } = useCollection<Student>(studentsRef);
   
   const handlePaymentAction = async (transaction: Transaction, newStatus: 'Paid' | 'Failed') => {
     if (!firestore) return;
@@ -92,12 +94,10 @@ export default function EventPaymentsPage() {
     return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
   };
 
-  if (isEventLoading || areTransactionsLoading) {
+  if (isEventLoading || areTransactionsLoading || areStudentsLoading) {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Loading...</CardTitle>
-            </CardHeader>
+        <Card className="flex items-center justify-center py-12">
+            <BrandedLoader />
         </Card>
     )
   }
