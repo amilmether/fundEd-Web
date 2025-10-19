@@ -1,55 +1,35 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is authenticated.
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Rules for the 'classes' collection
+    // Allow public read access for the payment page
     match /classes/{classId} {
-      // Reps and admins can manage class documents.
-      allow read, write: if isSignedIn(); // Simplified for now, should be role-based in a real app
-
-      // Events should be publicly readable for the payment page.
+      // Allow reading a specific event
       match /events/{eventId} {
         allow get: if true;
-        // Only authenticated users (reps/admins) can create, update, or delete events.
-        allow list, write: if isSignedIn();
-      }
-      
-      // Students list should be publicly readable for the payment page dropdown.
-      match /students/{studentId} {
-        allow get, list: if true;
-        // Only authenticated users (reps/admins) should manage the student roster.
-        allow write: if isSignedIn();
       }
 
-      // Payments can be created by anyone (public payment page).
-      // Reading/updating/deleting should be restricted.
+      // Allow listing all students for a class
+      match /students/{studentId} {
+        allow read: if true; // Allows get and list
+      }
+
+      // Allow listing payments for an event and creating new ones
       match /payments/{paymentId} {
+        allow read: if true; // Allows get and list
         allow create: if true;
-        // Only authenticated users can read or manage payments.
-        allow get, list, update, delete: if isSignedIn();
-      }
-      
-      // QR codes are internal and should only be managed by authenticated users.
-      match /qrcodes/{qrCodeId} {
-          allow read, write: if isSignedIn();
-      }
-      
-      // Print distributions are internal and should only be managed by authenticated users.
-      match /print_distributions/{distributionId} {
-          allow read, write: if isSignedIn();
       }
     }
     
-    // User documents can only be read/written by the user themselves or admins.
-    match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    // Authenticated reps/admins can manage all data within their class
+    match /classes/{classId}/{document=**} {
+      allow read, write: if request.auth != null; // Simple rule: must be logged in
+    }
+
+    // Fallback to deny all other access
+    match /{path=**} {
+      allow read, write: if false;
     }
   }
 }
