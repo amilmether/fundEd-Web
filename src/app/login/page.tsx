@@ -16,12 +16,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/icons';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useAuth, useUser } from '@/firebase';
 import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Loader } from '@/components/ui/loader';
 
 
 const loginSchema = z.object({
@@ -55,7 +55,7 @@ export default function LoginPage() {
   if (isUserLoading || user) {
     return (
         <div className="flex min-h-screen flex-col items-center justify-center">
-            <p>Loading...</p>
+            <Loader text="Loading..." />
         </div>
     )
   }

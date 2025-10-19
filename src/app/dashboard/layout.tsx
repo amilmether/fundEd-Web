@@ -25,7 +25,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +45,7 @@ import { useAuth, useCollection, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
 import { useEffect, useState } from 'react';
+import { Loader } from '@/components/ui/loader';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -93,11 +94,11 @@ function MobileNav() {
       </SheetTrigger>
       <SheetContent side="left" className="flex flex-col p-0">
         <SheetHeader className="p-4 border-b">
+           <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <Logo className="h-6 w-6 text-primary" />
             <span className="font-headline">FundEd</span>
           </Link>
-           <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
         </SheetHeader>
         <nav className="flex-1 overflow-y-auto p-4">
             <MainNav />
@@ -155,7 +156,7 @@ export default function DashboardLayout({
   }
 
   if (isUserLoading || !user) {
-    return <div className="flex min-h-screen items-center justify-center">Loading...</div>
+    return <div className="flex min-h-screen items-center justify-center"><Loader text="Authenticating..." /></div>
   }
 
 
