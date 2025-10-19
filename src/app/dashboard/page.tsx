@@ -54,7 +54,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -150,15 +150,17 @@ export default function DashboardPage() {
              {/* Mobile View */}
             <div className="grid gap-4 md:hidden">
               {transactions.slice(0, 5).map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                  <div>
-                    <div className="font-medium">{transaction.studentName}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {transaction.eventName}
+                <div key={transaction.id} className="p-4 bg-muted/50 rounded-lg flex flex-col gap-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium">{transaction.studentName}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {transaction.eventName}
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right font-semibold">
-                    ₹{transaction.amount.toLocaleString()}
+                     <div className="text-right font-semibold">
+                      ₹{transaction.amount.toLocaleString()}
+                    </div>
                   </div>
                 </div>
               ))}
