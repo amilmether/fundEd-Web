@@ -2,179 +2,254 @@
  * @fileoverview Firestore Security Rules for FundEd platform.
  *
  * Core Philosophy:
- * This ruleset prioritizes secure data access based on user roles and ownership.
- * It enforces a strict user-ownership model for user profiles and restricts
- * access to class-specific data based on user roles (admin, rep, student).
+ * This ruleset enforces a role-based access control model, with a strict separation of user data.
+ * Users can only access their own data, and class representatives (reps) can manage data related to their classes.
+ * Admin users have full access to all data.
  *
  * Data Structure:
- * - /users/{userId}: Stores individual user profiles, accessible only to the
- *   user themselves (owner).
- * - /classes/{classId}: Stores class information. Access is controlled based
- *   on user roles and class representation.
- * - /classes/{classId}/events/{eventId}: Stores event details for a specific
- *   class. Access is restricted to authorized class members (rep, admins).
- * - /classes/{classId}/payments/{paymentId}: Stores payment information for a
- *   specific class. Access is restricted to authorized class members (rep, admins).
- * - /classes/{classId}/students/{studentId}: Stores student information for a specific
- *   class. Access is restricted to authorized class members (rep, admins).
- * - /classes/{classId}/qrcodes/{qrCodeId}: Stores QR code information for a specific
- *   class. Access is restricted to authorized class members (rep, admins).
- * - /classes/{classId}/print_distributions/{distributionId}: Stores print distribution records for a class. Access is restricted to authorized class members (rep, admins).
+ * - /users/{userId}: Stores individual user profiles. Only the user and admins can read/write.
+ * - /classes/{classId}: Stores class information. Reps of the class and admins can manage.
+ * - /classes/{classId}/events/{eventId}: Events associated with a specific class. Managed by reps and admins.
+ * - /classes/{classId}/payments/{paymentId}: Payment records for class events. Managed by reps and admins.
+ * - /classes/{classId}/students/{studentId}: Student records of a specific class. Managed by reps and admins.
+ * - /classes/{classId}/qrcodes/{qrCodeId}: QR codes for a specific class. Managed by reps and admins.
+ * - /classes/{classId}/print_distributions/{distributionId}: Print distribution records. Managed by reps and admins.
  *
  * Key Security Decisions:
- * - User listing is explicitly denied to prevent unauthorized data access.
- * - Data validation is minimized during prototyping to allow for rapid
- *   iteration, focusing on authorization and relational integrity.
- * - Authorization is done by checking the classId of the user against the classId in the path.
+ * - User listing is disabled to prevent unauthorized data scraping.
+ * - The `role` field in the user document determines authorization levels.
+ * - All write operations are validated against the authenticated user's role and ownership.
  *
  * Denormalization for Authorization:
- * - The ruleset assumes that any information required for authorization
- *   is readily available within the document or can be efficiently checked
- *   using the request context.
+ *  - The `classId` is denormalized into the User document to enforce path-based authorization for user-related operations.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Secures user profiles, allowing only the owner to read and write.
+     * @description Checks if the user is signed in.
+     * @return {boolean} True if the user is signed in, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the user is the owner of the document based on the provided userId.
+     * @param {string} userId - The user ID to compare against the request's authentication UID.
+     * @return {boolean} True if the user is the owner, false otherwise.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the user is an existing owner of the document based on the provided userId.
+     * @param {string} userId - The user ID to compare against the request's authentication UID.
+     * @return {boolean} True if the user is the owner and resource exists, false otherwise.
+     */
+    function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Checks if the user has the 'admin' role.
+     * @return {boolean} True if the user has the 'admin' role, false otherwise.
+     */
+    function isAdmin() {
+        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    /**
+     * @description Checks if the user has the 'rep' role and is the representative of the class.
+     * @param {string} classId - The class ID to check against the user's classId.
+     * @return {boolean} True if the user is a rep of the class, false otherwise.
+     */
+    function isRepOfClass(classId) {
+        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'rep' && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.classId == classId;
+    }
+
+    /**
+     * @description Security rules for user documents.
      * @path /users/{userId}
-     * @allow (create) User with ID 'olaVUpyqgHcYyCAHcr0scWDty0Z2' can create a profile at /users/olaVUpyqgHcYyCAHcr0scWDty0Z2.
-     * @allow (get, update, delete) User with ID 'olaVUpyqgHcYyCAHcr0scWDty0Z2' can access /users/olaVUpyqgHcYyCAHcr0scWDty0Z2.
-     * @deny (get, update, delete) User with ID 'otherUserId' cannot access /users/olaVUpyqgHcYyCAHcr0scWDty0Z2.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) User with ID 'user123' creates their own profile.
+     *     Request: { "auth": { "uid": "user123" }, "resource": { "data": { "id": "user123", ... } } }
+     * @allow (get) User with ID 'user123' reads their own profile.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @allow (update) Admin updates any user profile.
+     *     Request: { "auth": { "uid": "admin123", "token": { "role": "admin" } } }
+     * @deny (create) User tries to create a profile with a mismatched ID.
+     *     Request: { "auth": { "uid": "user123" }, "resource": { "data": { "id": "user456", ... } } }
+     * @deny (get) Non-admin user tries to read another user's profile.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @deny (update) User tries to update another user's profile.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @principle Enforces document ownership for writes and restricts read access to owners and admins.
      */
     match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if false; // User listing is not permitted
 
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) || isAdmin();
+      allow delete: if isExistingOwner(userId) || isAdmin();
     }
 
     /**
-     * @description Secures class data, allowing access to authorized class members (rep, admins).
+     * @description Security rules for class documents.
      * @path /classes/{classId}
-     * @allow (get, list) Any authenticated user can read class data.
-     * @allow (create) Only admins can create classes.
-     * @allow (update, delete) Only the class rep or admins can modify class data.
-     * @deny (update, delete) A regular user (student) cannot modify class data.
-     * @principle Restricts write access based on user roles and class representation.
+     * @allow (create) Admin creates a new class.
+     *     Request: { "auth": { "uid": "admin123", "token": { "role": "admin" } } }
+     * @allow (get) Any signed-in user can read a class document.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @allow (update) Class rep updates their class details.
+     *     Request: { "auth": { "uid": "rep456", "token": { "role": "rep" } }, "resource": { "data": { ... } } }
+     * @deny (create) Non-admin user tries to create a class.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @deny (update) User tries to update a class they are not a rep of.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @deny (delete) Non-admin tries to delete a class
+     *      Request: { "auth": { "uid": "user123" } }
+     * @principle Enforces admin-only creation and role-based updates for classes.
      */
     match /classes/{classId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
+      allow get: if isSignedIn();
+      allow list: if false;
 
-      allow get, list: if isSignedIn();
-      allow create: if false; // TODO: Add admin check if roles are implemented.
-      allow update: if false; // TODO: Add admin/rep check based on denormalized data.
-      allow delete: if false; // TODO: Add admin/rep check based on denormalized data.
+      allow create: if isAdmin();
+      allow update: if isRepOfClass(classId) || isAdmin();
+      allow delete: if isAdmin();
     }
 
     /**
-     * @description Secures event data for a specific class.
+     * @description Security rules for event documents within a class.
      * @path /classes/{classId}/events/{eventId}
-     * @allow (get, list) Any authenticated user can read event data for a class.
-     * @allow (create) Only the class rep or admins can create events.
-     * @allow (update, delete) Only the class rep or admins can modify event data.
-     * @deny (create, update, delete) A regular user (student) cannot create or modify event data.
-     * @principle Restricts access based on user roles and class representation.
+     * @allow (create) Class rep creates a new event for their class.
+     *     Request: { "auth": { "uid": "rep456", "token": { "role": "rep" } }, "resource": { "data": { ... } } }
+     * @allow (get) Any signed-in user can read an event.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @allow (update) Class rep updates an event for their class.
+     *     Request: { "auth": { "uid": "rep456", "token": { "role": "rep" } }, "resource": { "data": { ... } } }
+     * @deny (create) Non-rep user tries to create an event.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @deny (update) User tries to update an event for a class they are not a rep of.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @deny (delete) Non-admin tries to delete an event
+     *      Request: { "auth": { "uid": "user123" } }
+     * @principle Enforces role-based access control for event management.
      */
     match /classes/{classId}/events/{eventId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
 
-      allow get, list: if isSignedIn();
-      allow create: if false; // TODO: Add admin/rep check based on denormalized data.
-      allow update: if false; // TODO: Add admin/rep check based on denormalized data.
-      allow delete: if false; // TODO: Add admin/rep check based on denormalized data.
+      allow create: if isRepOfClass(classId) || isAdmin();
+      allow update: if isRepOfClass(classId) || isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
     }
 
     /**
-     * @description Secures payment data for a specific class.
+     * @description Security rules for payment documents within a class.
      * @path /classes/{classId}/payments/{paymentId}
-     * @allow (get, list) Any authenticated user can read payment data for a class.
-     * @allow (create) Only the class rep or admins can create payment records.
-     * @allow (update, delete) Only the class rep or admins can modify payment records.
-     * @deny (create, update, delete) A regular user (student) cannot create or modify payment records.
-     * @principle Restricts access based on user roles and class representation.
+     * @allow (create) Class rep creates a new payment record for their class.
+     *     Request: { "auth": { "uid": "rep456", "token": { "role": "rep" } }, "resource": { "data": { ... } } }
+     * @allow (get) Any signed-in user can read a payment.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @allow (update) Class rep updates a payment for their class.
+     *     Request: { "auth": { "uid": "rep456", "token": { "role": "rep" } }, "resource": { "data": { ... } } }
+     * @deny (create) Non-rep user tries to create a payment.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @deny (update) User tries to update a payment for a class they are not a rep of.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @deny (delete) Non-admin tries to delete a payment
+     *      Request: { "auth": { "uid": "user123" } }
+     * @principle Enforces role-based access control for payment management.
      */
     match /classes/{classId}/payments/{paymentId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
+      allow get: if isSignedIn();
+      allow list: if isRepOfClass(classId) || isAdmin();
 
-      //The reported error was happening here.
-      allow get, list: if isSignedIn();
-      allow create: if false; // TODO: Add admin/rep check based on denormalized data.
-      allow update: if false; // TODO: Add admin/rep check based on denormalized data.
-      allow delete: if false; // TODO: Add admin/rep check based on denormalized data.
+      allow create: if isRepOfClass(classId) || isAdmin();
+      allow update: if isRepOfClass(classId) || isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
     }
 
     /**
-     * @description Secures student data for a specific class.
+     * @description Security rules for student documents within a class.
      * @path /classes/{classId}/students/{studentId}
-     * @allow (get, list) Any authenticated user can read student data for a class.
-     * @allow (create) Only the class rep or admins can create student records.
-     * @allow (update, delete) Only the class rep or admins can modify student records.
-     * @deny (create, update, delete) A regular user (student) cannot create or modify student records.
+     * @allow (create) Class rep creates a new student record for their class.
+     *     Request: { "auth": { "uid": "rep456", "token": { "role": "rep" } }, "resource": { "data": { ... } } }
+     * @allow (get) Any signed-in user can read a student.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @allow (update) Class rep updates a student for their class.
+     *     Request: { "auth": { "uid": "rep456", "token": { "role": "rep" } }, "resource": { "data": { ... } } }
+     * @deny (create) Non-rep user tries to create a student.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @deny (update) User tries to update a student for a class they are not a rep of.
+     *     Request: { "auth": { "uid": "user123" } }
+     * @deny (delete) Non-admin tries to delete a student
+     *      Request: { "auth": { "uid": "user123" } }
+     * @principle Enforces role-based access control for student management.
      */
     match /classes/{classId}/students/{studentId} {
-        function isSignedIn() {
-            return request.auth != null;
-        }
+      allow get: if isSignedIn();
+      allow list: if isRepOfClass(classId) || isAdmin();
 
-        allow get, list: if isSignedIn();
-        allow create: if false; // TODO: Add admin/rep check based on denormalized data.
-        allow update: if false; // TODO: Add admin/rep check based on denormalized data.
-        allow delete: if false; // TODO: Add admin/rep check based on denormalized data.
+      allow create: if isRepOfClass(classId) || isAdmin();
+      allow update: if isRepOfClass(classId) || isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
     }
 
-    /**
-     * @description Secures QR code data for a specific class.
-     * @path /classes/{classId}/qrcodes/{qrCodeId}
-     * @allow (get, list) Any authenticated user can read QR code data for a class.
-     * @allow (create) Only the class rep or admins can create QR code records.
-     * @allow (update, delete) Only the class rep or admins can modify QR code records.
-     * @deny (create, update, delete) A regular user (student) cannot create or modify QR code records.
-     */
+      /**
+       * @description Security rules for QR code documents within a class.
+       * @path /classes/{classId}/qrcodes/{qrCodeId}
+       * @allow (create) Class rep creates a new QR code record for their class.
+       *     Request: { "auth": { "uid": "rep456", "token": { "role": "rep" } }, "resource": { "data": { ... } } }
+       * @allow (get) Any signed-in user can read a QR code.
+       *     Request: { "auth": { "uid": "user123" } }
+       * @allow (update) Class rep updates a QR code for their class.
+       *     Request: { "auth": { "uid": "rep456", "token": { "role": "rep" } }, "resource": { "data": { ... } } }
+       * @deny (create) Non-rep user tries to create a QR code.
+       *     Request: { "auth": { "uid": "user123" } }
+       * @deny (update) User tries to update a QR code for a class they are not a rep of.
+       *     Request: { "auth": { "uid": "user123" } }
+       * @deny (delete) Non-admin tries to delete a QR code
+       *      Request: { "auth": { "uid": "user123" } }
+       * @principle Enforces role-based access control for QR code management.
+       */
     match /classes/{classId}/qrcodes/{qrCodeId} {
-        function isSignedIn() {
-            return request.auth != null;
-        }
+        allow get: if isSignedIn();
+        allow list: if isRepOfClass(classId) || isAdmin();
 
-        allow get, list: if isSignedIn();
-        allow create: if false; // TODO: Add admin/rep check based on denormalized data.
-        allow update: if false; // TODO: Add admin/rep check based on denormalized data.
-        allow delete: if false; // TODO: Add admin/rep check based on denormalized data.
+        allow create: if isRepOfClass(classId) || isAdmin();
+        allow update: if isRepOfClass(classId) || isAdmin() && resource != null;
+        allow delete: if isAdmin() && resource != null;
     }
 
-    /**
-     * @description Secures print distribution data for a specific class.
-     * @path /classes/{classId}/print_distributions/{distributionId}
-     * @allow (get, list) Any authenticated user can read print distribution data for a class.
-     * @allow (create) Only the class rep or admins can create print distribution records.
-     * @allow (update, delete) Only the class rep or admins can modify print distribution records.
-     * @deny (create, update, delete) A regular user (student) cannot create or modify print distribution records.
-     */
+      /**
+       * @description Security rules for print distribution documents within a class.
+       * @path /classes/{classId}/print_distributions/{distributionId}
+       * @allow (create) Class rep creates a new print distribution record for their class.
+       *     Request: { "auth": { "uid": "rep456", "token": { "role": "rep" } }, "resource": { "data": { ... } } }
+       * @allow (get) Any signed-in user can read a print distribution record.
+       *     Request: { "auth": { "uid": "user123" } }
+       * @allow (update) Class rep updates a print distribution record for their class.
+       *     Request: { "auth": { "uid": "rep456", "token": { "role": "rep" } }, "resource": { "data": { ... } } }
+       * @deny (create) Non-rep user tries to create a print distribution record.
+       *     Request: { "auth": { "uid": "user123" } }
+       * @deny (update) User tries to update a print distribution record for a class they are not a rep of.
+       *     Request: { "auth": { "uid": "user123" } }
+       * @deny (delete) Non-admin tries to delete a print distribution record
+       *      Request: { "auth": { "uid": "user123" } }
+       * @principle Enforces role-based access control for print distribution management.
+       */
     match /classes/{classId}/print_distributions/{distributionId} {
-        function isSignedIn() {
-            return request.auth != null;
-        }
+        allow get: if isSignedIn();
+        allow list: if isRepOfClass(classId) || isAdmin();
 
-        allow get, list: if isSignedIn();
-        allow create: if false; // TODO: Add admin/rep check based on denormalized data.
-        allow update: if false; // TODO: Add admin/rep check based on denormalized data.
-        allow delete: if false; // TODO: Add admin/rep check based on denormalized data.
+        allow create: if isRepOfClass(classId) || isAdmin();
+        allow update: if isRepOfClass(classId) || isAdmin() && resource != null;
+        allow delete: if isAdmin() && resource != null;
     }
   }
 }
