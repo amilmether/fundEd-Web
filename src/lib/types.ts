@@ -34,3 +34,12 @@ export type QrCode = {
   name: string;
   url: string;
 };
+
+export type PrintDistribution = {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentRoll: string;
+  eventId: string;
+  distributedAt: string;
+};

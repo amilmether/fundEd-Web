@@ -1,16 +1,6 @@
-import type { Transaction, Event, Student, QrCode } from './types';
+import type { Transaction, Event, Student, QrCode, PrintDistribution } from './types';
 
 export const transactions: Transaction[] = [
-  {
-    id: 'TXN94321',
-    studentName: 'Priya Singh',
-    studentRoll: 'C-05',
-    eventName: 'Sports Day Kit',
-    amount: 250,
-    date: '2023-10-25',
-    status: 'Verification Pending',
-    paymentMethod: 'QR Scan',
-  },
   {
     id: 'TXN55467',
     studentName: 'Sneha Patel',
@@ -41,6 +31,26 @@ export const transactions: Transaction[] = [
     status: 'Verification Pending',
     paymentMethod: 'Cash',
   },
+  {
+    id: 'TXN94321',
+    studentName: 'Priya Singh',
+    studentRoll: 'C-05',
+    eventName: 'Sports Day Kit',
+    amount: 250,
+    date: '2023-10-25',
+    status: 'Verification Pending',
+    paymentMethod: 'QR Scan',
+  },
+  {
+    id: 'TXN11223',
+    studentName: 'Rohan Sharma',
+    studentRoll: 'B-21',
+    eventName: 'Workshop Prints',
+    amount: 150,
+    date: '2023-11-01',
+    status: 'Paid',
+    paymentMethod: 'Razorpay',
+  }
 ];
 
 export const events: Event[] = [
@@ -75,6 +85,16 @@ export const events: Event[] = [
     totalPending: 12500,
     paymentOptions: ['QR', 'Cash'],
     qrCodeUrl: 'https://picsum.photos/seed/qr2/300/300',
+  },
+  {
+    id: 'EVT004',
+    name: 'Workshop Prints',
+    description: 'Prints for the upcoming AI/ML workshop.',
+    deadline: '2023-10-30',
+    cost: 150,
+    totalCollected: 7500,
+    totalPending: 0,
+    paymentOptions: ['Razorpay'],
   },
 ];
 
@@ -128,4 +148,15 @@ export const chartData = [
   { month: 'April', collected: 7300, pending: 1200 },
   { month: 'May', collected: 20900, pending: 6000 },
   { month: 'June', collected: 21400, pending: 3000 },
+];
+
+export const printDistributions: PrintDistribution[] = [
+    {
+        id: 'DIST-001',
+        studentId: 'STU004',
+        studentName: 'Sneha Patel',
+        studentRoll: 'B-32',
+        eventId: 'EVT004',
+        distributedAt: '2023-11-02T10:30:00Z',
+    },
 ];

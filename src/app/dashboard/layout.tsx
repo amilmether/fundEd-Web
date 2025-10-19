@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Printer,
   Settings,
   ShieldCheck,
   Users,
@@ -41,6 +42,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/events', icon: Wallet, label: 'Events' },
+  { href: '/dashboard/prints', icon: Printer, label: 'Prints' },
   { href: '/dashboard/students', icon: Users, label: 'Students' },
   { href: '/dashboard/reports', icon: FileText, label: 'Reports' },
   { href: '/dashboard/fraud-detection', icon: ShieldCheck, label: 'Fraud Detection' },
