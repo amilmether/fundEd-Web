@@ -30,6 +30,7 @@ import { collection, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import Image from 'next/image';
 
 
 export default function SettingsPage() {
@@ -191,11 +192,11 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {isLoading && <p>Loading QR codes...</p>}
+            {isLoading && <p className="col-span-full text-center">Loading QR codes...</p>}
             {qrCodes?.map(qr => (
               <Card key={qr.id}>
                 <CardContent className="p-4 flex flex-col items-center justify-center gap-4">
-                   <img
+                   <Image
                       src={qr.url}
                       alt={qr.name}
                       width={150}

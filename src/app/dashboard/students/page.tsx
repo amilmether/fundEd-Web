@@ -306,7 +306,7 @@ export default function StudentsPage() {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? <p>Loading students...</p> : (
+        {isLoading ? <p className="text-center text-muted-foreground">Loading students...</p> : (
             <>
             {/* Mobile View */}
             <div className="grid gap-4 md:hidden">
@@ -350,53 +350,55 @@ export default function StudentsPage() {
             </div>
 
             {/* Desktop View */}
-            <Table className="hidden md:table">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Roll No.</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Class</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredStudents?.map((student) => (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-mono font-medium font-code">{student.rollNo}</TableCell>
-                    <TableCell className="font-medium">{student.name}</TableCell>
-                    <TableCell>{student.email}</TableCell>
-                    <TableCell>{student.class}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button aria-haspopup="true" size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem disabled>Edit</DropdownMenuItem>
-                           <DropdownMenuItem asChild>
-                            <Link href={`/dashboard/students/${student.id}/payments`}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Payments
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(student)}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="hidden md:block">
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Roll No.</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Class</TableHead>
+                    <TableHead>
+                        <span className="sr-only">Actions</span>
+                    </TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {filteredStudents?.map((student) => (
+                    <TableRow key={student.id}>
+                        <TableCell className="font-mono font-medium font-code">{student.rollNo}</TableCell>
+                        <TableCell className="font-medium">{student.name}</TableCell>
+                        <TableCell>{student.email}</TableCell>
+                        <TableCell>{student.class}</TableCell>
+                        <TableCell className="text-right">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                            </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem disabled>Edit</DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/students/${student.id}/payments`}>
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    View Payments
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(student)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                            </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+            </div>
             </>
         )}
       </CardContent>

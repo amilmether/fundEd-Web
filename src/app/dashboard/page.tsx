@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/chart';
 import { Bar, BarChart as RechartsBarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, limit } from 'firebase/firestore';
+import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 import type { Transaction, Event } from '@/lib/types';
 import { chartData } from '@/lib/data'; // Keep using mock chart data for now
 
@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const eventsCollection = useMemoFirebase(() => (firestore && user) ? collection(firestore, `classes/${classId}/events`) : null, [firestore, user, classId]);
   const { data: events } = useCollection<Event>(eventsCollection);
 
-  const recentTransactionsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, `classes/${classId}/payments`), limit(5)) : null, [firestore, user, classId]);
+  const recentTransactionsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, `classes/${classId}/payments`), orderBy('paymentDate', 'desc'), limit(5)) : null, [firestore, user, classId]);
   const { data: recentTransactions } = useCollection<Transaction>(recentTransactionsQuery);
 
 
@@ -166,29 +166,31 @@ export default function DashboardPage() {
             </div>
             
             {/* Desktop View */}
-            <Table className="hidden md:table">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Student</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentTransactions?.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell>
-                      <div className="font-medium">{transaction.studentName}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {transaction.eventName}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      ₹{transaction.amount.toLocaleString()}
-                    </TableCell>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {recentTransactions?.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell>
+                        <div className="font-medium">{transaction.studentName}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {transaction.eventName}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        ₹{transaction.amount.toLocaleString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>

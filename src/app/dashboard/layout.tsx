@@ -44,7 +44,7 @@ import type { Transaction, Event } from '@/lib/types';
 import { useAuth, useCollection, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -76,8 +76,15 @@ function MainNav() {
 }
 
 function MobileNav() {
+  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="outline" size="icon" className="shrink-0 md:hidden">
           <Menu className="h-5 w-5" />
@@ -87,7 +94,7 @@ function MobileNav() {
       <SheetContent side="left" className="flex flex-col p-0">
         <div className="flex h-16 items-center px-4 border-b">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Logo className="h-6 w-6" />
+            <Logo className="h-6 w-6 text-primary" />
             <span className="font-headline">FundEd</span>
           </Link>
         </div>
@@ -141,7 +148,9 @@ export default function DashboardLayout({
   }, [user, isUserLoading, router]);
 
   const handleLogout = () => {
-    auth.signOut();
+    if(auth) {
+        auth.signOut();
+    }
   }
 
   if (isUserLoading || !user) {

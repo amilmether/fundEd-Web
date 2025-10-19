@@ -180,35 +180,37 @@ export default function ReportsPage() {
                 </div>
 
                 {/* Desktop View */}
-                <Table className="hidden md:table">
-                    <TableHeader>
-                    <TableRow>
-                        <TableHead>Transaction ID</TableHead>
-                        <TableHead>Student</TableHead>
-                        <TableHead>Event</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Status</TableHead>
-                    </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {transactions?.map(transaction => (
-                        <TableRow key={transaction.id}>
-                        <TableCell className="font-code">{transaction.id}</TableCell>
-                        <TableCell>
-                            <div>{transaction.studentName}</div>
-                            <div className="text-xs text-muted-foreground">{transaction.studentRoll}</div>
-                        </TableCell>
-                        <TableCell>{transaction.eventName}</TableCell>
-                        <TableCell>₹{transaction.amount.toLocaleString()}</TableCell>
-                        <TableCell>{formatDate(transaction.paymentDate)}</TableCell>
-                        <TableCell>
-                            <StatusBadge status={transaction.status} />
-                        </TableCell>
+                <div className="hidden md:block">
+                    <Table>
+                        <TableHeader>
+                        <TableRow>
+                            <TableHead>Transaction ID</TableHead>
+                            <TableHead>Student</TableHead>
+                            <TableHead>Event</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Status</TableHead>
                         </TableRow>
-                    ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                        {transactions?.map(transaction => (
+                            <TableRow key={transaction.id}>
+                            <TableCell className="font-code">{transaction.id}</TableCell>
+                            <TableCell>
+                                <div>{transaction.studentName}</div>
+                                <div className="text-xs text-muted-foreground">{transaction.studentRoll}</div>
+                            </TableCell>
+                            <TableCell>{transaction.eventName}</TableCell>
+                            <TableCell>₹{transaction.amount.toLocaleString()}</TableCell>
+                            <TableCell>{formatDate(transaction.paymentDate)}</TableCell>
+                            <TableCell>
+                                <StatusBadge status={transaction.status} />
+                            </TableCell>
+                            </TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
+                </div>
             </>
             )}
         </CardContent>

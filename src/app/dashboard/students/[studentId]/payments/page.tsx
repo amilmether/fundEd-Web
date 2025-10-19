@@ -148,34 +148,36 @@ export default function StudentPaymentsPage() {
         </div>
 
         {/* Desktop View */}
-        <Table className="hidden md:table">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Transaction ID</TableHead>
-              <TableHead>Event</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Method</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions?.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell className="font-code">{transaction.id}</TableCell>
-                <TableCell>
-                  <div className="font-medium">{transaction.eventName}</div>
-                </TableCell>
-                <TableCell>₹{transaction.amount.toLocaleString()}</TableCell>
-                <TableCell>{formatDate(transaction.paymentDate)}</TableCell>
-                <TableCell>{transaction.paymentMethod}</TableCell>
-                <TableCell>
-                   <StatusBadge status={transaction.status} />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="hidden md:block">
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>Transaction ID</TableHead>
+                <TableHead>Event</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Method</TableHead>
+                <TableHead>Status</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {transactions?.map((transaction) => (
+                <TableRow key={transaction.id}>
+                    <TableCell className="font-code">{transaction.id}</TableCell>
+                    <TableCell>
+                    <div className="font-medium">{transaction.eventName}</div>
+                    </TableCell>
+                    <TableCell>₹{transaction.amount.toLocaleString()}</TableCell>
+                    <TableCell>{formatDate(transaction.paymentDate)}</TableCell>
+                    <TableCell>{transaction.paymentMethod}</TableCell>
+                    <TableCell>
+                    <StatusBadge status={transaction.status} />
+                    </TableCell>
+                </TableRow>
+                ))}
+            </TableBody>
+            </Table>
+        </div>
         {transactions?.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
                 No payments found for this student.

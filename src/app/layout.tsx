@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Space_Grotesk, Source_Code_Pro } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -12,7 +12,13 @@ const sourceCodePro = Source_Code_Pro({ subsets: ['latin'], variable: '--font-so
 export const metadata: Metadata = {
   title: 'FundEd | Class Fund and Event Management',
   description: 'A full-stack Next.js web app for class fund and event management.',
+  manifest: '/manifest.json',
 };
+
+export const viewport: Viewport = {
+  themeColor: '#ffffff',
+};
+
 
 export default function RootLayout({
   children,

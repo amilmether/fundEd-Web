@@ -57,7 +57,7 @@ export default function Home() {
       </header>
 
       <main className="flex-1">
-        <section className="container mx-auto flex flex-col items-center px-4 py-20 text-center">
+        <section className="container mx-auto flex flex-col items-center px-4 py-12 sm:py-20 text-center">
           <h1 className="font-headline text-4xl font-extrabold tracking-tight md:text-6xl lg:text-7xl">
             Effortless Fund Management for Education
           </h1>
@@ -71,7 +71,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="features" className="bg-muted/40 py-20">
+        <section id="features" className="bg-muted/40 py-16 sm:py-20">
           <div className="container mx-auto px-4">
             <div className="text-center">
               <h2 className="font-headline text-3xl font-bold md:text-4xl">Everything You Need in One Place</h2>

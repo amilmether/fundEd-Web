@@ -380,7 +380,7 @@ export default function EventsPage() {
         </Dialog>
       </CardHeader>
       <CardContent>
-        {areEventsLoading ? <p>Loading events...</p> : (
+        {areEventsLoading ? <p className="text-center text-muted-foreground">Loading events...</p> : (
             <>
             {/* Mobile View */}
             <div className="grid gap-4 md:hidden">
@@ -402,7 +402,7 @@ export default function EventsPage() {
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Collected</span>
-                      <span className="text-green-600 dark:text-green-400">
+                      <span className="font-semibold text-green-600 dark:text-green-400">
                         ₹{getCollectedAmountForEvent(event.id).toLocaleString()}
                       </span>
                     </div>
@@ -416,39 +416,47 @@ export default function EventsPage() {
             </div>
 
             {/* Desktop View */}
-            <Table className="hidden md:table">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Event</TableHead>
-                  <TableHead className="hidden sm:table-cell">Cost</TableHead>
-                  <TableHead className="hidden md:table-cell">Collected</TableHead>
-                  <TableHead>Deadline</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {events?.map((event) => (
-                  <TableRow key={event.id}>
-                    <TableCell>
-                      <div className="font-bold">{event.name}</div>
-                      <div className="text-sm text-muted-foreground hidden sm:inline">
-                        {event.description}
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">₹{event.cost.toLocaleString()}</TableCell>
-                    <TableCell className="text-green-600 dark:text-green-400 hidden md:table-cell">
-                      ₹{getCollectedAmountForEvent(event.id).toLocaleString()}
-                    </TableCell>
-                    <TableCell>{formatDate(event.deadline)}</TableCell>
-                    <TableCell>
-                      <EventActions event={event} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="hidden md:block">
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Event</TableHead>
+                    <TableHead className="hidden sm:table-cell">Cost</TableHead>
+                    <TableHead className="hidden md:table-cell">Collected</TableHead>
+                    <TableHead>Deadline</TableHead>
+                    <TableHead>
+                        <span className="sr-only">Actions</span>
+                    </TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {events?.map((event) => (
+                    <TableRow key={event.id}>
+                        <TableCell>
+                        <div className="font-bold">{event.name}</div>
+                        <div className="text-sm text-muted-foreground hidden sm:inline">
+                            {event.description}
+                        </div>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">₹{event.cost.toLocaleString()}</TableCell>
+                        <TableCell className="text-green-600 dark:text-green-400 hidden md:table-cell font-semibold">
+                        ₹{getCollectedAmountForEvent(event.id).toLocaleString()}
+                        </TableCell>
+                        <TableCell>{formatDate(event.deadline)}</TableCell>
+                        <TableCell className="text-right">
+                          <EventActions event={event} />
+                        </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+            </div>
+
+            {events?.length === 0 && !areEventsLoading && (
+                <div className="text-center py-12 text-muted-foreground">
+                    No events created yet.
+                </div>
+            )}
             </>
         )}
       </CardContent>

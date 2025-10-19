@@ -253,26 +253,28 @@ export default function PrintsPage() {
               ))}
           </div>
           {/* Desktop View */}
-          <Table className="hidden md:table">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Student Name</TableHead>
-                <TableHead>Roll Number</TableHead>
-                <TableHead>Date Distributed</TableHead>
-                <TableHead>Time Distributed</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {eventDistributions?.map(dist => (
-                <TableRow key={dist.id}>
-                  <TableCell className="font-medium">{dist.studentName}</TableCell>
-                  <TableCell>{dist.studentRoll}</TableCell>
-                  <TableCell>{formatDate(dist.distributedAt)}</TableCell>
-                  <TableCell>{new Date(dist.distributedAt instanceof Timestamp ? dist.distributedAt.toDate() : dist.distributedAt).toLocaleTimeString()}</TableCell>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Student Name</TableHead>
+                  <TableHead>Roll Number</TableHead>
+                  <TableHead>Date Distributed</TableHead>
+                  <TableHead>Time Distributed</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {eventDistributions?.map(dist => (
+                  <TableRow key={dist.id}>
+                    <TableCell className="font-medium">{dist.studentName}</TableCell>
+                    <TableCell>{dist.studentRoll}</TableCell>
+                    <TableCell>{formatDate(dist.distributedAt)}</TableCell>
+                    <TableCell>{new Date(dist.distributedAt instanceof Timestamp ? dist.distributedAt.toDate() : dist.distributedAt).toLocaleTimeString()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
            {eventDistributions?.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
                 No distribution history for this event yet.
