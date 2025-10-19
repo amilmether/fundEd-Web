@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -22,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Upload, Check, ChevronsUpDown } from 'lucide-react';
+import { Upload, Check, ChevronsUpDown, QrCode } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -37,6 +36,17 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog';
+
 
 export default function PaymentPage() {
   const { eventId } = useParams();
@@ -45,6 +55,7 @@ export default function PaymentPage() {
   const [open, setOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [searchValue, setSearchValue] = useState('');
+  const [showQrDialog, setShowQrDialog] = useState(false);
 
   if (!event) {
     return (
@@ -72,7 +83,31 @@ export default function PaymentPage() {
     );
   }, [searchValue]);
 
+  const getButtonText = () => {
+    if (!selectedMethod) return `Pay ₹${event.cost.toLocaleString()}`;
+    switch (selectedMethod) {
+      case 'razorpay':
+        return `Pay ₹${event.cost.toLocaleString()} with Razorpay`;
+      case 'qr':
+        return 'Show QR Code';
+      case 'cash':
+        return 'Confirm Cash Payment';
+      default:
+        return `Pay ₹${event.cost.toLocaleString()}`;
+    }
+  }
+
+  const handlePayClick = () => {
+    if (selectedMethod === 'qr') {
+      setShowQrDialog(true);
+    } else {
+      // Handle other payment logic (Razorpay, Cash)
+      alert(`Processing ${selectedMethod} payment...`);
+    }
+  }
+
   return (
+    <>
     <div className="flex min-h-screen flex-col items-center bg-muted/40">
       <header className="w-full px-4 py-6">
         <nav className="container mx-auto flex items-center justify-between">
@@ -192,20 +227,52 @@ export default function PaymentPage() {
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {selectedMethod === 'qr'
-                      ? 'Please upload a screenshot of your QR payment.'
-                      : 'Please ask the rep to confirm your cash payment.'}
+                      ? 'Please upload a screenshot of your QR payment for verification.'
+                      : 'Please get your payment confirmed by the class representative.'}
                   </p>
                 </div>
               )}
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" size="lg" disabled={!selectedStudent || !selectedMethod}>
-              Pay ₹{event.cost.toLocaleString()}
+            <Button className="w-full" size="lg" disabled={!selectedStudent || !selectedMethod} onClick={handlePayClick}>
+              {getButtonText()}
             </Button>
           </CardFooter>
         </Card>
       </main>
     </div>
+
+    <AlertDialog open={showQrDialog} onOpenChange={setShowQrDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <QrCode className="h-6 w-6" />
+              Scan to Pay
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Use any UPI app to scan the QR code below to complete your payment of ₹{event.cost.toLocaleString()} for {event.name}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-center p-4">
+            <Image 
+              src="https://picsum.photos/seed/qr/300/300"
+              alt="QR Code"
+              width={250}
+              height={250}
+              className="rounded-lg border"
+            />
+          </div>
+          <p className="text-center text-sm text-muted-foreground">
+            After paying, please upload a screenshot on the previous page for verification.
+          </p>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowQrDialog(false)}>
+              Done
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

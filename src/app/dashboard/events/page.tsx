@@ -43,11 +43,13 @@ import { events } from '@/lib/data';
 import type { Event } from '@/lib/types';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function EventsPage() {
   const [open, setOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const { toast } = useToast();
+  const [paymentOptions, setPaymentOptions] = useState<('Razorpay' | 'QR' | 'Cash')[]>([]);
 
   const handleCopyLink = (eventId: string) => {
     const link = `${window.location.origin}/pay/${eventId}`;
@@ -60,13 +62,21 @@ export default function EventsPage() {
 
   const handleEdit = (event: Event) => {
     setSelectedEvent(event);
+    setPaymentOptions(event.paymentOptions);
     setOpen(true);
   };
 
   const handleCreateNew = () => {
     setSelectedEvent(null);
+    setPaymentOptions(['Razorpay']);
     setOpen(true);
   };
+
+  const handlePaymentOptionChange = (option: 'Razorpay' | 'QR' | 'Cash') => {
+    setPaymentOptions(prev => 
+      prev.includes(option) ? prev.filter(item => item !== option) : [...prev, option]
+    );
+  }
 
   const EventActions = ({ event }: { event: Event }) => (
     <DropdownMenu>
@@ -169,6 +179,25 @@ export default function EventsPage() {
                   }
                   className="col-span-3"
                 />
+              </div>
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label className="text-right pt-2">
+                  Payment Options
+                </Label>
+                <div className="col-span-3 grid gap-2">
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="razorpay" checked={paymentOptions.includes('Razorpay')} onCheckedChange={() => handlePaymentOptionChange('Razorpay')} />
+                        <label htmlFor="razorpay" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Razorpay</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="qr" checked={paymentOptions.includes('QR')} onCheckedChange={() => handlePaymentOptionChange('QR')} />
+                        <label htmlFor="qr" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">QR Code</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="cash" checked={paymentOptions.includes('Cash')} onCheckedChange={() => handlePaymentOptionChange('Cash')} />
+                        <label htmlFor="cash" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Cash</label>
+                    </div>
+                </div>
               </div>
             </div>
             <DialogFooter>
