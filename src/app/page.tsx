@@ -50,7 +50,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button asChild>
-              <Link href="/dashboard">Login</Link>
+              <Link href="/login">Login</Link>
             </Button>
           </div>
         </nav>
@@ -66,7 +66,7 @@ export default function Home() {
           </p>
           <div className="mt-8">
             <Button size="lg" asChild>
-              <Link href="/dashboard">Get Started</Link>
+              <Link href="/login">Get Started</Link>
             </Button>
           </div>
         </section>
