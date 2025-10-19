@@ -21,7 +21,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { events, transactions as initialTransactions } from '@/lib/data';
-import { cn } from '@/lib/utils';
 import { ArrowLeft, Check, X } from 'lucide-react';
 import type { Transaction } from '@/lib/types';
 import { useState } from 'react';
