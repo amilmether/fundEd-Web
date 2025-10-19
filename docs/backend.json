@@ -1,0 +1,310 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the FundEd platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "username": {
+          "type": "string",
+          "description": "The username of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user (admin, rep, student)."
+        },
+        "classId": {
+          "type": "string",
+          "description": "Reference to Class. (Relationship: Class 1:N User). Nullable for admins."
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "role"
+      ]
+    },
+    "Class": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Class",
+      "type": "object",
+      "description": "Represents a class within the FundEd platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the class."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the class."
+        },
+        "repId": {
+          "type": "string",
+          "description": "Reference to User representing the class representative. (Relationship: User 1:1 Class)"
+        },
+        "totalFunds": {
+          "type": "number",
+          "description": "Total funds raised by the class."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "repId",
+        "totalFunds"
+      ]
+    },
+    "Event": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Event",
+      "type": "object",
+      "description": "Represents an event for a class to raise funds.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the event."
+        },
+        "classId": {
+          "type": "string",
+          "description": "Reference to Class. (Relationship: Class 1:N Event)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the event."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the event."
+        },
+        "deadline": {
+          "type": "string",
+          "description": "The deadline for the event.",
+          "format": "date-time"
+        },
+        "cost": {
+          "type": "number",
+          "description": "The cost per student for the event."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "The payment method for the event (razorpay, qr, screenshot)."
+        }
+      },
+      "required": [
+        "id",
+        "classId",
+        "name",
+        "description",
+        "deadline",
+        "cost",
+        "paymentMethod"
+      ]
+    },
+    "Payment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Payment",
+      "type": "object",
+      "description": "Represents a payment made by a student for an event.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the payment."
+        },
+        "studentId": {
+          "type": "string",
+          "description": "Reference to User representing the student. (Relationship: User 1:N Payment)"
+        },
+        "eventId": {
+          "type": "string",
+          "description": "Reference to Event. (Relationship: Event 1:N Payment)"
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount paid."
+        },
+        "paymentDate": {
+          "type": "string",
+          "description": "The date and time of the payment.",
+          "format": "date-time"
+        },
+        "transactionId": {
+          "type": "string",
+          "description": "The transaction ID from the payment gateway."
+        },
+        "paymentStatus": {
+          "type": "string",
+          "description": "The status of the payment (pending, completed, failed)."
+        },
+        "screenshotUrl": {
+          "type": "string",
+          "description": "URL of the payment screenshot (if applicable).",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "studentId",
+        "eventId",
+        "amount",
+        "paymentDate",
+        "transactionId",
+        "paymentStatus"
+      ]
+    },
+    "FundBalance": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "FundBalance",
+      "type": "object",
+      "description": "Represents the fund balance for a class.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the fund balance record."
+        },
+        "classId": {
+          "type": "string",
+          "description": "Reference to Class. (Relationship: Class 1:1 FundBalance)"
+        },
+        "collected": {
+          "type": "number",
+          "description": "The total amount of funds collected."
+        },
+        "pending": {
+          "type": "number",
+          "description": "The total amount of funds pending."
+        },
+        "spent": {
+          "type": "number",
+          "description": "The total amount of funds spent."
+        },
+        "lastUpdated": {
+          "type": "string",
+          "description": "The date and time the fund balance was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "classId",
+        "collected",
+        "pending",
+        "spent",
+        "lastUpdated"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user data. Each document is uniquely identified by the userId.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/classes/{classId}",
+        "definition": {
+          "entityName": "Class",
+          "schema": {
+            "$ref": "#/backend/entities/Class"
+          },
+          "description": "Stores class data. Each document is uniquely identified by the classId.",
+          "params": [
+            {
+              "name": "classId",
+              "description": "The unique identifier of the class."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/classes/{classId}/events/{eventId}",
+        "definition": {
+          "entityName": "Event",
+          "schema": {
+            "$ref": "#/backend/entities/Event"
+          },
+          "description": "Stores event data for a specific class. Includes the classId as part of the path, which eliminates the need to fetch parent data.",
+          "params": [
+            {
+              "name": "classId",
+              "description": "The unique identifier of the class."
+            },
+            {
+              "name": "eventId",
+              "description": "The unique identifier of the event."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/payments/{paymentId}",
+        "definition": {
+          "entityName": "Payment",
+          "schema": {
+            "$ref": "#/backend/entities/Payment"
+          },
+          "description": "Stores payment data for a specific user. Includes the userId in the path for easy access and ownership checks.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user (student)."
+            },
+            {
+              "name": "paymentId",
+              "description": "The unique identifier of the payment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/classes/{classId}/fund_balance/{fundBalanceId}",
+        "definition": {
+          "entityName": "FundBalance",
+          "schema": {
+            "$ref": "#/backend/entities/FundBalance"
+          },
+          "description": "Stores fund balance data for a specific class.  Includes classId for direct access and ensures each class has one fund balance document.",
+          "params": [
+            {
+              "name": "classId",
+              "description": "The unique identifier of the class."
+            },
+            {
+              "name": "fundBalanceId",
+              "description": "The unique identifier of the FundBalance (likely should only be one, but including ID in case need to version in the future)."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support the FundEd application's core features, emphasizing security, scalability, and ease of debugging. The structure adheres to the principles of Authorization Independence, Structural Segregation, Access Modeling, and Data Clarity.  \n\n**Authorization Independence:**  Authorization independence is achieved by avoiding hierarchical authorization dependencies.  For example, access to Events and Payments for a Class does not rely on fetching the Class document itself.  Instead, fields like `classId` are present on the `Event` document, and fields like `studentId` and `eventId` are present on `Payment` documents, ensuring that security rules can be enforced without `get()` calls.\n\n**Structural Segregation:**  The design maintains structural segregation by storing each entity type in its own top-level collection or within user-specific subcollections. For instance, Users are stored in `/users/{userId}`, Classes are in `/classes/{classId}`, Events in `/classes/{classId}/events/{eventId}`, and Payments in `/users/{userId}/payments/{paymentId}`. This segregation allows for consistent security rules within each collection.\n\n**Access Modeling:**  Access modeling is standardized around path-based ownership and membership maps (though membership maps are not explicitly needed in this design due to the hierarchical structure).  Private user data (payments) resides under `/users/{userId}`, ensuring only the user has access. Class data and events are accessible to authorized roles through path-based rules.\n\n**QAPs (Rules are not Filters):** The structure is designed to facilitate secure `list` operations (QAPs).  For example, listing events for a class is done through the `/classes/{classId}/events` subcollection. Listing payments for a user is done through `/users/{userId}/payments`.  The security rules can limit access to these lists based on the user's role and the path, without needing to filter the results after retrieval.\n\n**Invariants:** The structure supports invariants such as ownership by leveraging hierarchical paths. Timestamps and other metadata can be enforced via rules to maintain data integrity.\n"
+  }
+}

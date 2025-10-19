@@ -1,0 +1,115 @@
+/**
+ * @file Firebase Security Rules for FundEd Platform
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for user-specific data
+ * (payments) and role-based access for class and event data.  It leverages
+ * Firestore's hierarchical structure to avoid complex queries in security rules.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores individual user profiles.
+ * - /classes/{classId}: Stores class information.
+ * - /classes/{classId}/events/{eventId}: Stores events associated with a class.
+ * - /users/{userId}/payments/{paymentId}: Stores payment information for a specific user.
+ * - /classes/{classId}/fund_balance/{fundBalanceId}: Stores the fund balance information for a class.
+ *
+ * Key Security Decisions:
+ * - Users can only read/write their own payment data.
+ * - Class and Event data is generally accessible.
+ * - The rules do not enforce strict schema validation during this prototyping phase.
+ * - Denormalization: classId is present on Event documents, and studentId and eventId are on Payment documents to avoid costly get() calls in rules.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if the user is signed in.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the authenticated user ID matches the requested user ID.
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Helper function to check if the authenticated user owns the existing document.
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Allows users to read and write their own user document.
+     * @path /users/{userId}
+     * @allow (create) User with ID matching auth.uid can create their profile.
+     * @allow (get, update, delete) Authenticated user can read, update, and delete their own profile.
+     * @deny (create, update, delete) User cannot create, update or delete another user's profile.
+     * @principle Enforces user-ownership for user profiles.
+     */
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows anyone to read class data, but restricts creation, update, and deletion.
+     * @path /classes/{classId}
+     * @allow (get, list) Any user can read and list class data.
+     * @deny (create, update, delete) Only authorized roles (e.g., admin) can create, update, or delete classes (currently denied for all).
+     * @principle Public read access with restricted write access.
+     */
+    match /classes/{classId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Allows anyone to read event data for a class, but restricts creation, update, and deletion.
+     * @path /classes/{classId}/events/{eventId}
+     * @allow (get, list) Any user can read and list event data.
+     * @deny (create, update, delete) Only authorized roles can create, update, or delete events (currently denied for all).
+     * @principle Public read access with restricted write access.
+     */
+    match /classes/{classId}/events/{eventId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Allows users to manage their own payment data.
+     * @path /users/{userId}/payments/{paymentId}
+     * @allow (create) User with ID matching auth.uid can create their payment record.
+     * @allow (get, update, delete) Authenticated user can read, update, and delete their own payment record.
+     * @deny (create, update, delete) User cannot create, update, or delete another user's payment record.
+     * @principle Enforces user-ownership for payment data.
+     */
+    match /users/{userId}/payments/{paymentId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows anyone to read the fund balance for a class, but restricts creation, update, and deletion.
+     * @path /classes/{classId}/fund_balance/{fundBalanceId}
+     * @allow (get, list) Any user can read and list fund balance data.
+     * @deny (create, update, delete) Only authorized roles can create, update, or delete fund balance data (currently denied for all).
+     * @principle Public read access with restricted write access.
+     */
+    match /classes/{classId}/fund_balance/{fundBalanceId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}
