@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Upload, MoreHorizontal, PlusCircle, Download, FileQuestion, Loader2 } from 'lucide-react';
+import { Upload, MoreHorizontal, PlusCircle, Download, FileQuestion, Loader2, Trash2, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
@@ -41,8 +41,10 @@ import { collection, writeBatch, doc } from 'firebase/firestore';
 import type { Student } from '@/lib/types';
 import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Papa from 'papaparse';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import Link from 'next/link';
 
 export default function StudentsPage() {
   const firestore = useFirestore();
@@ -51,6 +53,9 @@ export default function StudentsPage() {
   const [uploadCsvOpen, setUploadCsvOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
 
   const { toast } = useToast();
   // TODO: Replace with dynamic classId from user profile
@@ -170,7 +175,24 @@ export default function StudentsPage() {
     });
   }
 
+  const openDeleteDialog = (student: Student) => {
+    setStudentToDelete(student);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteStudent = () => {
+    if (!firestore || !studentToDelete) return;
+    const studentRef = doc(firestore, `classes/${classId}/students`, studentToDelete.id);
+    deleteDocumentNonBlocking(studentRef);
+    toast({ title: 'Student Deleted', description: `${studentToDelete.name} has been removed.` });
+    setDeleteDialogOpen(false);
+    setStudentToDelete(null);
+    setDeleteConfirmation('');
+  };
+
+
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1">
@@ -305,9 +327,17 @@ export default function StudentsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>View Payments</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                          <DropdownMenuItem disabled>Edit</DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/students/${student.id}/payments`}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Payments
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(student)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -349,9 +379,15 @@ export default function StudentsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>View Payments</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem disabled>Edit</DropdownMenuItem>
+                           <DropdownMenuItem asChild>
+                            <Link href={`/dashboard/students/${student.id}/payments`}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Payments
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => openDeleteDialog(student)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -365,7 +401,35 @@ export default function StudentsPage() {
         )}
       </CardContent>
     </Card>
+
+    <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete the
+            student <span className="font-semibold text-foreground">{studentToDelete?.name}</span> and all associated data.
+            To confirm, please type <strong className="text-foreground">delete</strong> below.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Input
+          value={deleteConfirmation}
+          onChange={(e) => setDeleteConfirmation(e.target.value)}
+          placeholder="delete"
+          className="my-2"
+        />
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setDeleteConfirmation('')}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteStudent}
+            disabled={deleteConfirmation !== 'delete'}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Delete Student
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
-
-    
