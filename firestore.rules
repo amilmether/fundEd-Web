@@ -1,35 +1,55 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Allow authenticated users to read/write to the 'users' and 'classes' top-level collections
-    match /users/{userId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    match /classes/{classId} {
-      allow read, write: if request.auth != null;
+    // Helper function to check if a user is authenticated.
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // Explicitly allow access to each subcollection within a class
-    match /classes/{classId}/events/{eventId} {
-      allow read, write: if request.auth != null;
+    // Rules for the 'classes' collection
+    match /classes/{classId} {
+      // Reps and admins can manage class documents.
+      allow read, write: if isSignedIn(); // Simplified for now, should be role-based in a real app
+
+      // Events should be publicly readable for the payment page.
+      match /events/{eventId} {
+        allow get: if true;
+        // Only authenticated users (reps/admins) can create, update, or delete events.
+        allow list, write: if isSignedIn();
+      }
+      
+      // Students list should be publicly readable for the payment page dropdown.
+      match /students/{studentId} {
+        allow get, list: if true;
+        // Only authenticated users (reps/admins) should manage the student roster.
+        allow write: if isSignedIn();
+      }
+
+      // Payments can be created by anyone (public payment page).
+      // Reading/updating/deleting should be restricted.
+      match /payments/{paymentId} {
+        allow create: if true;
+        // Only authenticated users can read or manage payments.
+        allow get, list, update, delete: if isSignedIn();
+      }
+      
+      // QR codes are internal and should only be managed by authenticated users.
+      match /qrcodes/{qrCodeId} {
+          allow read, write: if isSignedIn();
+      }
+      
+      // Print distributions are internal and should only be managed by authenticated users.
+      match /print_distributions/{distributionId} {
+          allow read, write: if isSignedIn();
+      }
     }
     
-    match /classes/{classId}/payments/{paymentId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    match /classes/{classId}/students/{studentId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    match /classes/{classId}/qrcodes/{qrCodeId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    match /classes/{classId}/print_distributions/{distributionId} {
-      allow read, write: if request.auth != null;
+    // User documents can only be read/written by the user themselves or admins.
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
   }
 }
