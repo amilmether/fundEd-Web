@@ -63,6 +63,7 @@ export const events: Event[] = [
     totalCollected: 45000,
     totalPending: 5000,
     paymentOptions: ['Razorpay', 'QR', 'Cash'],
+    qrCodeUrl: 'https://picsum.photos/seed/qr1/300/300',
   },
   {
     id: 'EVT002',
@@ -83,6 +84,7 @@ export const events: Event[] = [
     totalCollected: 12500,
     totalPending: 12500,
     paymentOptions: ['QR', 'Cash'],
+    qrCodeUrl: 'https://picsum.photos/seed/qr2/300/300',
   },
 ];
 

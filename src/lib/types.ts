@@ -18,6 +18,7 @@ export type Event = {
   totalCollected: number;
   totalPending: number;
   paymentOptions: ('Razorpay' | 'QR' | 'Cash')[];
+  qrCodeUrl?: string;
 };
 
 export type Student = {

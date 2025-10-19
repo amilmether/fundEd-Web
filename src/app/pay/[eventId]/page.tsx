@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Upload, Check, ChevronsUpDown, QrCode } from 'lucide-react';
+import { Upload, Check, ChevronsUpDown, QrCode, Mail } from 'lucide-react';
 import { Logo } from '@/components/icons';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -46,7 +46,7 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
 } from '@/components/ui/alert-dialog';
-
+import { useToast } from '@/hooks/use-toast';
 
 export default function PaymentPage() {
   const { eventId } = useParams();
@@ -56,6 +56,8 @@ export default function PaymentPage() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [searchValue, setSearchValue] = useState('');
   const [showQrDialog, setShowQrDialog] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const { toast } = useToast();
 
   if (!event) {
     return (
@@ -89,22 +91,41 @@ export default function PaymentPage() {
       case 'razorpay':
         return `Pay ₹${event.cost.toLocaleString()} with Razorpay`;
       case 'qr':
-        return 'Show QR Code';
+        return 'Show QR Code & Pay';
       case 'cash':
-        return 'Confirm Cash Payment';
+        return 'Submit for Verification';
       default:
         return `Pay ₹${event.cost.toLocaleString()}`;
     }
-  }
+  };
 
   const handlePayClick = () => {
     if (selectedMethod === 'qr') {
-      setShowQrDialog(true);
-    } else {
-      // Handle other payment logic (Razorpay, Cash)
-      alert(`Processing ${selectedMethod} payment...`);
+      if (event.qrCodeUrl) {
+        setShowQrDialog(true);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "QR Code Not Available",
+          description: "The class representative has not uploaded a QR code for this event."
+        })
+      }
+    } else if (selectedMethod === 'razorpay') {
+      // Logic for Razorpay
+      toast({ title: "Redirecting to Razorpay..."});
+      setShowSuccessDialog(true);
+    } else if (selectedMethod === 'cash') {
+       // Logic for Cash
+       setShowSuccessDialog(true);
     }
+  };
+
+  const handleSubmit = () => {
+    // This would typically involve uploading the file and submitting the form data
+    setShowQrDialog(false);
+    setShowSuccessDialog(true);
   }
+
 
   return (
     <>
@@ -216,22 +237,6 @@ export default function PaymentPage() {
                   </SelectContent>
                 </Select>
               </div>
-              {showScreenshotUpload && (
-                <div className="grid gap-2">
-                  <Label htmlFor="screenshot">Upload Screenshot/Proof</Label>
-                  <div className="flex items-center gap-2">
-                    <Input id="screenshot" type="file" className="flex-1" />
-                    <Button variant="outline" size="icon">
-                      <Upload className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedMethod === 'qr'
-                      ? 'Please upload a screenshot of your QR payment for verification.'
-                      : 'Please get your payment confirmed by the class representative.'}
-                  </p>
-                </div>
-              )}
             </div>
           </CardContent>
           <CardFooter>
@@ -244,31 +249,56 @@ export default function PaymentPage() {
     </div>
 
     <AlertDialog open={showQrDialog} onOpenChange={setShowQrDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <QrCode className="h-6 w-6" />
               Scan to Pay
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Use any UPI app to scan the QR code below to complete your payment of ₹{event.cost.toLocaleString()} for {event.name}.
+              Use any UPI app to scan the QR code below to pay ₹{event.cost.toLocaleString()} for {event.name}.
+              After paying, upload a screenshot for verification.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex justify-center p-4">
             <Image 
-              src="https://picsum.photos/seed/qr/300/300"
+              src={event.qrCodeUrl!}
               alt="QR Code"
               width={250}
               height={250}
               className="rounded-lg border"
             />
           </div>
-          <p className="text-center text-sm text-muted-foreground">
-            After paying, please upload a screenshot on the previous page for verification.
-          </p>
+          <div className="grid gap-2">
+            <Label htmlFor="screenshot">Upload Screenshot</Label>
+            <div className="flex items-center gap-2">
+              <Input id="screenshot" type="file" className="flex-1" accept="image/*" />
+              <Button variant="outline" size="icon">
+                <Upload className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowQrDialog(false)}>
-              Done
+            <Button variant="outline" onClick={() => setShowQrDialog(false)}>Cancel</Button>
+            <Button onClick={handleSubmit}>Submit for Verification</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                <Check className="h-6 w-6 text-green-600" />
+            </div>
+            <AlertDialogTitle className="text-center">Payment Submitted!</AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              Your payment has been submitted for verification. You will receive an email confirmation shortly.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+             <AlertDialogAction asChild>
+                <Link href="/">Go to Homepage</Link>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

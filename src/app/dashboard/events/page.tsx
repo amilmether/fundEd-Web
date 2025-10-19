@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, PlusCircle, Copy, Pencil, Eye } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Copy, Pencil, Eye, Upload } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -199,6 +199,19 @@ export default function EventsPage() {
                     </div>
                 </div>
               </div>
+              {paymentOptions.includes('QR') && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="qr-code" className="text-right">
+                    QR Code
+                  </Label>
+                  <div className="col-span-3 flex items-center gap-2">
+                    <Input id="qr-code" type="file" className="flex-1" />
+                    <Button variant="outline" size="icon">
+                      <Upload className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <DialogClose asChild>
