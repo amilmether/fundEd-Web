@@ -33,29 +33,41 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { events } from '@/lib/data';
+import type { Event } from '@/lib/types';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function EventsPage() {
   const [open, setOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const { toast } = useToast();
 
   const handleCopyLink = (eventId: string) => {
     const link = `${window.location.origin}/pay/${eventId}`;
     navigator.clipboard.writeText(link);
     toast({
-      title: "Link Copied",
-      description: "Payment link has been copied to your clipboard.",
+      title: 'Link Copied',
+      description: 'Payment link has been copied to your clipboard.',
     });
   };
+  
+  const handleEdit = (event: Event) => {
+    setSelectedEvent(event);
+    setOpen(true);
+  };
+  
+  const handleCreateNew = () => {
+    setSelectedEvent(null);
+    setOpen(true);
+  }
 
-  const EventActions = ({ eventId }: { eventId: string }) => (
+  const EventActions = ({ event }: { event: Event }) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -66,7 +78,7 @@ export default function EventsPage() {
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleEdit(event)}>
           <Pencil className="mr-2 h-4 w-4" />
           Edit
         </DropdownMenuItem>
@@ -74,7 +86,7 @@ export default function EventsPage() {
           <Eye className="mr-2 h-4 w-4" />
           View Payments
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleCopyLink(eventId)}>
+        <DropdownMenuItem onClick={() => handleCopyLink(event.id)}>
           <Copy className="mr-2 h-4 w-4" />
           Copy Payment Link
         </DropdownMenuItem>
@@ -93,16 +105,16 @@ export default function EventsPage() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">
+             <Button className="w-full sm:w-auto" onClick={handleCreateNew}>
               <PlusCircle className="mr-2 h-4 w-4" />
               <span className="whitespace-nowrap">Create Event</span>
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Create New Event</DialogTitle>
+              <DialogTitle>{selectedEvent ? 'Edit Event' : 'Create New Event'}</DialogTitle>
               <DialogDescription>
-                Fill in the details below to create a new event for fund collection.
+                {selectedEvent ? 'Update the details for your event.' : 'Fill in the details below to create a new event for fund collection.'}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -110,25 +122,25 @@ export default function EventsPage() {
                 <Label htmlFor="name" className="text-right">
                   Name
                 </Label>
-                <Input id="name" placeholder="e.g., Annual Tech Fest" className="col-span-3" />
+                <Input id="name" defaultValue={selectedEvent?.name} placeholder="e.g., Annual Tech Fest" className="col-span-3" />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="description" className="text-right">
                   Description
                 </Label>
-                <Textarea id="description" placeholder="A short description of the event" className="col-span-3" />
+                <Textarea id="description" defaultValue={selectedEvent?.description} placeholder="A short description of the event" className="col-span-3" />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="cost" className="text-right">
                   Cost (₹)
                 </Label>
-                <Input id="cost" type="number" placeholder="e.g., 500" className="col-span-3" />
+                <Input id="cost" type="number" defaultValue={selectedEvent?.cost} placeholder="e.g., 500" className="col-span-3" />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="deadline" className="text-right">
                   Deadline
                 </Label>
-                <Input id="deadline" type="date" className="col-span-3" />
+                <Input id="deadline" type="date" defaultValue={selectedEvent ? new Date(selectedEvent.deadline).toISOString().split('T')[0] : ''} className="col-span-3" />
               </div>
             </div>
             <DialogFooter>
@@ -137,7 +149,7 @@ export default function EventsPage() {
                   Cancel
                 </Button>
               </DialogClose>
-              <Button type="submit" onClick={() => setOpen(false)}>Create Event</Button>
+              <Button type="submit" onClick={() => setOpen(false)}>{selectedEvent ? 'Save Changes' : 'Create Event'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -153,7 +165,7 @@ export default function EventsPage() {
                     <CardTitle className="text-lg">{event.name}</CardTitle>
                     <CardDescription>{event.description}</CardDescription>
                   </div>
-                  <EventActions eventId={event.id} />
+                  <EventActions event={event} />
                 </div>
               </CardHeader>
               <CardContent className="grid gap-4">
@@ -208,7 +220,7 @@ export default function EventsPage() {
                 </TableCell>
                 <TableCell>{new Date(event.deadline).toLocaleDateString()}</TableCell>
                 <TableCell>
-                  <EventActions eventId={event.id} />
+                  <EventActions event={event} />
                 </TableCell>
               </TableRow>
             ))}
