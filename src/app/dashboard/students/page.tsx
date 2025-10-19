@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Upload, MoreHorizontal, PlusCircle } from 'lucide-react';
+import { Upload, MoreHorizontal, PlusCircle, Download, FileQuestion, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
@@ -37,16 +37,21 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, writeBatch } from 'firebase/firestore';
 import type { Student } from '@/lib/types';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import Papa from 'papaparse';
 
 export default function StudentsPage() {
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState('');
-  const [open, setOpen] = useState(false);
+  const [addStudentOpen, setAddStudentOpen] = useState(false);
+  const [uploadCsvOpen, setUploadCsvOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const { toast } = useToast();
   // TODO: Replace with dynamic classId from user profile
   const classId = 'class-1';
@@ -80,7 +85,89 @@ export default function StudentsPage() {
     addDocumentNonBlocking(collection(firestore, `classes/${classId}/students`), studentData);
     toast({ title: 'Student Added' });
 
-    setOpen(false);
+    setAddStudentOpen(false);
+  }
+
+  const handleDownloadTemplate = () => {
+    const csvContent = "rollNo,name,email,class\nA-01,John Doe,john.doe@example.com,SE-A\nA-02,Jane Smith,jane.smith@example.com,SE-A";
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "students-template.csv");
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !firestore) return;
+    
+    setIsUploading(true);
+
+    Papa.parse<Omit<Student, 'id'>>(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const existingRollNos = new Set(students?.map(s => s.rollNo));
+        const newStudents = results.data.filter(s => {
+          const rollNo = s.rollNo?.trim();
+          if (!rollNo) return false;
+          if (existingRollNos.has(rollNo)) return false;
+          existingRollNos.add(rollNo); // Add to set to handle duplicates within the CSV itself
+          return true;
+        });
+
+        const duplicatesCount = results.data.length - newStudents.length;
+
+        if (newStudents.length > 0) {
+            try {
+                const batch = writeBatch(firestore);
+                const studentsRef = collection(firestore, `classes/${classId}/students`);
+                
+                newStudents.forEach(student => {
+                    const docRef = doc(studentsRef);
+                    batch.set(docRef, student);
+                });
+
+                await batch.commit();
+
+                 toast({
+                    title: 'Upload Successful',
+                    description: `${newStudents.length} students were added. ${duplicatesCount} duplicate(s) were skipped.`,
+                });
+            } catch(e) {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Upload Failed',
+                    description: 'There was an error saving the student data.',
+                });
+                console.error(e)
+            }
+        } else {
+             toast({
+                title: 'No New Students Added',
+                description: 'All students in the file were duplicates or the file was empty.',
+            });
+        }
+        
+        setIsUploading(false);
+        setUploadCsvOpen(false);
+      },
+      error: (error) => {
+        console.error('CSV Parsing Error:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Upload Failed',
+            description: 'Could not parse the CSV file. Please check its format.',
+        });
+        setIsUploading(false);
+      }
+    });
   }
 
   return (
@@ -99,7 +186,7 @@ export default function StudentsPage() {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
              />
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={addStudentOpen} onOpenChange={setAddStudentOpen}>
             <DialogTrigger asChild>
                 <Button className="w-full sm:w-auto">
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -153,10 +240,47 @@ export default function StudentsPage() {
                 </form>
             </DialogContent>
           </Dialog>
-          <Button variant="outline" className="w-full sm:w-auto">
-            <Upload className="mr-2 h-4 w-4" /> 
-            <span className="whitespace-nowrap">Upload CSV</span>
-          </Button>
+
+          <Dialog open={uploadCsvOpen} onOpenChange={setUploadCsvOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto">
+                    <Upload className="mr-2 h-4 w-4" /> 
+                    <span className="whitespace-nowrap">Upload CSV</span>
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Upload Students via CSV</DialogTitle>
+                    <DialogDescription>
+                        Upload a CSV file to add multiple students at once. Duplicates will be skipped based on Roll No.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="rounded-lg border bg-muted/50 p-4 space-y-2 text-sm">
+                        <h4 className="font-semibold flex items-center gap-2"><FileQuestion className="h-4 w-4"/>File Format</h4>
+                        <p>Your CSV file must contain the headers: <code className="font-mono bg-muted px-1 py-0.5 rounded">rollNo</code>, <code className="font-mono bg-muted px-1 py-0.5 rounded">name</code>, <code className="font-mono bg-muted px-1 py-0.5 rounded">email</code>, and <code className="font-mono bg-muted px-1 py-0.5 rounded">class</code>.</p>
+                        <Button variant="link" size="sm" className="p-0 h-auto" onClick={handleDownloadTemplate}>
+                            <Download className="mr-2 h-3 w-3" />
+                            Download template file
+                        </Button>
+                    </div>
+                     <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="csv-file">CSV File</Label>
+                        <Input id="csv-file" type="file" accept=".csv" ref={fileInputRef} onChange={handleFileUpload} disabled={isUploading} />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="secondary" disabled={isUploading}>Cancel</Button>
+                    </DialogClose>
+                     <Button disabled={true} className="hidden">
+                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Upload and Process
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
         </div>
       </CardHeader>
       <CardContent>
