@@ -12,7 +12,7 @@ export function BrandedLoader() {
         </div>
       </div>
       <div className="absolute bottom-8 text-center text-sm text-muted-foreground">
-        <p>a product of SKSDM</p>
+        <p>A Sub Product of SKSDM</p>
       </div>
     </div>
   );
